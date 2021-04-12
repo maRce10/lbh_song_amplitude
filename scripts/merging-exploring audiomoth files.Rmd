@@ -1,0 +1,1219 @@
+---
+title: "LBH song amplitude 2019"
+author: <a href="http://marceloarayasalas.weebly.com/">Marcelo Araya-Salas</a>
+ &nbsp; 
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: kable
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r packages, echo=F, eval=T, message=FALSE, warning=FALSE}
+
+rm(list = ls())
+
+# unload all non-based packages
+out <- sapply(paste('package:', names(sessionInfo()$otherPkgs), sep = ""), function(x) try(detach(x, unload = FALSE, character.only = TRUE), silent = T))
+
+x<-c("warbleR", "chron", "Rraven", "ggplot2", "viridis", "MCMCglmm", "readxl", "pbapply")
+
+aa <- lapply(x, function(y) {
+  if(!y %in% installed.packages()[,"Package"])  {if(!y %in% c("warbleR", "Rraven")) install.packages(y) else devtools::install_github(paste0("maRce10/", y))
+}
+try(require(y, character.only = T), silent = T)
+  })
+
+```
+
+```{r functions and parameters, eval = F, echo = F}
+
+source('merge_audiomoth.R')
+
+cns.path <- "/media/m/Seagate Expansion Drive/Audiomoth_recordings/sound_files"
+
+```
+
+```{r concatenate audiomoth files, echo=F, eval=F}
+  
+# dest.path <- "D:/Audiomoth_recordings/397_YGR"
+dest.path <- "/media/m/Seagate Expansion Drive/Audiomoth_recordings/203_RYR_3/"
+# path <- "D:/Audiomoth_recordings/Without compressing RYR_203"
+path <- "/media/m/Seagate Expansion Drive/Audiomoth_recordings/Without compressing RYR (tercera percha)/"
+
+merge_audiomoth(path = path, dest.path = dest.path, date = "25 jun 2019", start.time = "08:06:00", ID = 203, location = "SUR", cl = 3)
+
+```
+
+```{r read selections amplitude, eval = FALSE, echo = FALSE}
+
+start.path <- "/media/m/Seagate Expansion Drive"
+
+source("~/Dropbox/Rraven/R/imp_raven.R")
+
+sls <- imp_raven(path = , "/home/m/Dropbox/Projects/LBH_song_amplitude/Selections_amplitude", all.data = TRUE, warbler.format = TRUE, sound.file.col = "Begin File")
+
+sls$file.path <- gsub("\\", "/",sls$sound.files, fixed = TRUE)
+sls$file.path <- gsub("F:", start.path, sls$file.path, fixed = TRUE)
+
+
+# add audiomoth number to file name
+sls$sound.files <- sapply(sls$file.path,  function(x) {
+  
+  x <- gsub("/media/m/Seagate Expansion Drive/Audiomoth_recordings/", "", x)
+  
+  b <- strsplit(x, "/")[[1]]
+  
+  w <- strsplit(b[length(b) - 1], "_")[[1]][3]
+  
+  w <- gsub("AM", "A", w, ignore.case = TRUE)
+  
+return(gsub(".wav", paste0("_", w, ".wav"),  b[length(b)]))
+  
+}, USE.NAMES = FALSE)
+
+
+
+sls$sound.files <- basename(gsub("Atwentyyyy", "A29",sls$sound.files, fixed = TRUE))
+
+sls$sound.files <- basename(gsub("777", "395",sls$sound.files, fixed = TRUE))
+
+sls$sound.files <- basename(gsub("444", "395",sls$sound.files, fixed = TRUE))
+
+
+all(file.exists(file.path("/media/m/Seagate Expansion Drive/Audiomoth_recordings/sound_files", unique(sls$sound.files))))
+
+sls$indiv <- sapply(strsplit(sls$sound.files, "_", fixed = TRUE), "[[", 1)
+
+table(sls$indiv)
+
+sls$start[sls$end > 1200] <- 0
+sls$end[sls$end > 1200] <- sls$end[sls$end > 1200] - 1200 
+
+sls$sound.files[sls$end > 1200] <- "398_SUR_27-Jun-2019_08.18_08.38_A73.wav"
+
+cs <- checksels(sls, path = cns.path)
+cs$check.res
+
+sls <- sls[cs$check.res == "OK", ]
+
+sls$PB <- "no_playback"
+```
+
+```{r read selections amplitude playback, eval = FALSE, echo = FALSE}
+
+start.path <- "/media/m/Seagate Expansion Drive"
+
+source("~/Dropbox/Rraven/R/imp_raven.R")
+
+sls.pb <- imp_raven(path = "/home/m/Dropbox/Projects/LBH_song_amplitude/Selections_playback", all.data = TRUE, warbler.format = TRUE, sound.file.col = "Begin File")
+
+sls.pb$PB[3:4] <- c("before", "after")
+
+sls.pb$PB <- ifelse(grepl("after", sls.pb$PB, ignore.case = TRUE), "after", "before")
+
+
+sls.pb$file.path <- gsub("\\", "/",sls.pb$sound.files, fixed = TRUE)
+sls.pb$file.path <- gsub("F:", start.path, sls.pb$file.path, fixed = TRUE)
+
+
+# add audiomoth number to file name
+sls.pb$sound.files <- sapply(sls.pb$file.path,  function(x) {
+  
+  x <- gsub("/media/m/Seagate Expansion Drive/Audiomoth_recordings/", "", x)
+  
+  b <- strsplit(x, "/")[[1]]
+  
+  w <- strsplit(b[length(b) - 1], "_")[[1]][3]
+  
+  w <- gsub("AM", "A", w, ignore.case = TRUE)
+  
+return(gsub(".wav", paste0("_", w, ".wav"),  b[length(b)]))
+  
+}, USE.NAMES = FALSE)
+
+
+sls.pb$sound.files <- basename(gsub("555", "395",sls.pb$sound.files, fixed = TRUE))
+
+unique(sls.pb$sound.files)[!file.exists(file.path("/media/m/Seagate Expansion Drive/Audiomoth_recordings/sound_files/", unique(sls.pb$sound.files)))]
+
+sls.pb$indiv <- sapply(strsplit(sls.pb$sound.files, "_", fixed = TRUE), "[[", 1)
+
+table(sls.pb$indiv)
+
+sls.pb2 <- sls.pb[sls.pb$end > 1200, ]
+
+sls.pb2$start[sls.pb2$end > 1200] <- 0
+sls.pb2$end[sls.pb2$end > 1200] <- sls.pb2$end[sls.pb2$end > 1200] - 1200 
+
+sls.pb2$sound.files[sls.pb2$end > 1200] <- c("384_SUR_16-Jul-2019_09.10_09.30_AEZ.wav", "391_SUR_16-Jul-2019_08.24_08.44_A45.wav")
+
+
+sls.pb2$selec <- 3
+
+sls.pb$end[sls.pb$end > 1200] <- 1200
+
+sls.pb <- rbind(sls.pb, sls.pb2)
+
+
+cs <- checksels(sls.pb, path = cns.path)
+
+```
+
+```{r autodetec all selections, eval = FALSE}
+
+sls.pb$`Begin File` <- sls$`Begin File` <- sls.pb$type <- NULL
+
+all.sls <- rbind(sls, sls.pb)
+
+# autodetec
+ad <- auto_detec(X = all.sls, threshold = 4, mindur = 0.05, maxdur = 0.2, ssmooth = 600, path = cns.path, parallel = 3, ls = TRUE, bp = c(1, 10), img = FALSE)
+
+table(ad$sound.files)
+
+sum(is.na(ad$start))
+
+
+# spectrograms(fr.ad, path = cns.path, dest.path = "/media/m/Seagate Expansion Drive/Audiomoth_recordings/spectrograms", flim = c(1, 10), wl = 200, fast.spec = TRUE, parallel = 3)
+
+
+f.ad <- filter_sels(fr.ad, path = "/media/m/Seagate Expansion Drive/Audiomoth_recordings/spectrograms")
+
+
+ad.extra <- auto_detec(X = all.sls[all.sls$indiv %in% c(384, 395, 391), ], threshold = 12, mindur = 0.05, maxdur = 0.16, ssmooth = 600, path = cns.path, parallel = 3, bp = c(1, 10), img = FALSE)
+
+spectrograms(ad.extra, path = cns.path, dest.path = "/media/m/Seagate Expansion Drive/Audiomoth_recordings/extra", flim = c(1, 10), wl = 200, fast.spec = TRUE, parallel = 3)
+
+f.ad2 <- filter_sels(fr.ad, path = "/media/m/Seagate Expansion Drive/Audiomoth_recordings/spectrograms/extra")
+
+
+f.ad3 <- rbind(f.ad2, f.ad)
+
+#import 203 RYR
+sls203 <- imp_raven(files = "203_SUR_10-Jul-2019_08.10_08.30.Table.1.selections.txt", all.data = TRUE, warbler.format = TRUE, sound.file.col = "Begin File", path = "/home/m/Dropbox/Projects/LBH_song_amplitude/Selections_amplitude/")
+
+sls203$sound.files <- "203_SUR_11-Jul-2019_06.50_07.10_AEZ.wav"
+
+ad203 <- auto_detec(X = sls203, threshold = 4, mindur = 0.05, maxdur = 0.2, ssmooth = 600, path = cns.path, parallel = 3, bp = c(1, 10), img = FALSE)
+
+spectrograms(ad203, path = cns.path, dest.path = "/media/m/Seagate Expansion Drive/Audiomoth_recordings/spectrograms/extra203", flim = c(1, 10), wl = 200, fast.spec = TRUE, parallel = 3)
+
+f.ad203 <- filter_sels(ad203, path = "/media/m/Seagate Expansion Drive/Audiomoth_recordings/spectrograms/extra203")
+
+
+f.ad3 <- rbind(f.ad3[, c("sound.files", "selec", "start", "end")], f.ad203)
+
+
+
+f.ad3$selec <- 1:nrow(f.ad3)
+
+f.ad3$PB <- sapply(1:nrow(f.ad3), function(x) {
+  
+  X <- all.sls[all.sls$sound.files == f.ad3$sound.files[x], ]
+  
+  return(X$PB[which(X$start < f.ad3$start[x] & X$end > f.ad3$end[x])][1])
+  })
+
+f.ad3 <- f.ad3[!is.na(f.ad3$start),]
+                        
+# detect frequency range
+fr.ad3 <- freq_range(f.ad3, wl = 300, bp = c(1, 12), path = cns.path, parallel = 3, img = FALSE, threshold = 5)
+
+sapply(fr.ad3, anyNA)
+
+# fix with mean bottom and top freq by sound file
+out <- lapply(unique(fr.ad3$sound.files), function(x) {
+  
+  X <- fr.ad3[fr.ad3$sound.files == x, ]
+  if(any(is.na(X$bottom.freq)))
+    X$bottom.freq[is.na(X$bottom.freq)] <- mean(X$bottom.freq, na.rm = TRUE)
+  
+  if(any(is.na(X$top.freq)))
+    X$top.freq[is.na(X$top.freq)] <- mean(X$top.freq, na.rm = TRUE)
+
+  return(X)
+  })
+
+fr.ad3 <- do.call(rbind, out)
+
+fr.ad3$top.freq[is.na(fr.ad3$top.freq)] <- mean(fr.ad3$top.freq, na.rm = TRUE)
+sapply(fr.ad3, anyNA)
+
+fr.ad3$top.freq[fr.ad3$top.freq <= fr.ad3$bottom.freq] <- fr.ad3$bottom.freq[fr.ad3$top.freq <= fr.ad3$bottom.freq] + 5
+
+fr.ad3$indiv <- sapply(strsplit(as.character(fr.ad3$sound.files), "_", fixed = TRUE), "[[", 1)
+
+
+fr.ad3$PB[is.na(fr.ad3$PB)] <- "no_playback"
+
+table(fr.ad3$PB, fr.ad3$indiv)
+
+write.csv(fr.ad3, "amplitude_and_playback_detections.csv", row.names = FALSE)
+
+exp_raven(fr.ad3, sound.file.path = cns.path, file.name =  "amplitude_and_playback_detections")
+
+cs <- checksels(fr.ad3, path = cns.path)
+
+est <- selection_table(fr.ad3, extended = TRUE, confirm.extended = FALSE, mar = 0.07, max.dur = 10000, path = cns.path)
+ 
+attr(est, "comments") <- "Frequency range not accurately measured"
+
+saveRDS(est, "lbh_amplitude_est_2019.RDS")
+
+```
+
+```{r specreator, eval = FALSE, echo = FALSE}
+
+f = 44100
+
+pls <- sine(7000, duration = 0.5, samp.rate =  f, xunit = "time")
+
+sil <- silence(duration = 0.5, samp.rate =  f, xunit = "time")
+
+
+clp <- pastew(pls, sil, f = f, output = "Wave")
+
+clp <- pastew(clp, clp, f = f, output = "Wave")
+
+clp <- pastew(clp, clp, f = f, output = "Wave")
+
+clp <- pastew(sil, clp, f = f, output = "Wave")
+
+clp <- normalize(clp, pcm = FALSE)
+
+# hist(clp@left)
+
+
+clp@left[(1.5* f):(2 * f)] <- clp@left[(0.5* f):(1 * f)] * 0.75
+
+
+clp@left[(2.5* f):(3 * f)] <- clp@left[(0.5* f):(1 * f)] * 0.5
+
+clp@left[(3.5* f):(4 * f)] <- clp@left[(0.5* f):(1 * f)] * 0.25
+
+
+clp <- resamp(clp, f = f, output = "Wave", g = 22050)
+
+clp.noise <- clp + clp + clp + clp + clp + noisew(f = 22050, d = duration(clp),output = "Wave")
+
+spectro(clp, scale = FALSE, palette = reverse.gray.colors.1, grid = FALSE, collevels = seq(-100, 0, 5), osc = T, heights = c(3, 2), fastdisp = TRUE)
+
+clp.noise <- normalize(clp.noise, unit = "16")
+clp <- normalize(clp, unit = "16")
+
+
+writeWave(clp, "Calibration_sound.wav", extensible = FALSE)
+
+writeWave(clp.noise, "Calibration_sound_noise.wav", extensible = FALSE)
+
+
+spec(clp, dBref= 2*10e-5,dB= "A", wl=128, at = 0.75)
+
+a <- spec(clp, dBref= 2*10e-5,dB= "A", wl=128, at = 2.75, plot = FALSE)
+
+# lamp <- spec(low, f=f,dBref= 2*10e-5,dB="max0",wl=128)
+# 
+# 
+# amp <- spec(clp, f=f,dBref= 2*10e-5,dB="max0",wl=128)
+
+# sel.file <- "Calibration.selections.txt"
+# sel.file <- "Calibration.noise.selections.txt"
+# sel.file <- "REC-Calibration.noise.selections.txt"
+# sel.file <- "AM7-Calibration.selections.txt"
+sel.file <- "AM45-Calibration.selections.txt"
+
+wv.sls <- imp_raven(files = sel.file, warbler.format = FALSE, all.data = TRUE, only.spectro.view = FALSE)
+
+sp.sls <- imp_raven(files = sel.file, warbler.format = TRUE, all.data = TRUE)
+
+# sp7 <- sp.sls
+# sp45 <- sp.sls
+# wv.sls45 <- wv.sls
+# wv.sls7 <- wv.sls
+# wv.sls45 <- wv.sls
+
+wv.sls <- wv.sls[wv.sls$View == "Waveform 1", ]
+
+round(sp.sls$`Peak Power (dB)` / max(sp.sls$`Peak Power (dB)`), 2)
+round(sp.sls$`Inband Power (dB)` / max(sp.sls$`Inband Power (dB)`), 2)
+round(sp.sls$`Energy (dB)` / max(sp.sls$`Energy (dB)`), 2)
+round(sp.sls$`Avg Power (dB)` / max(sp.sls$`Avg Power (dB)`), 2)
+round(sp.sls$`Max Power (dB)` / max(sp.sls$`Max Power (dB)`), 2)
+
+round(wv.sls$`RMS Amp (U)`/ max(wv.sls$`RMS Amp (U)`), 2)
+round(wv.sls$`Peak Amp (U)`/ max(wv.sls$`Peak Amp (U)`), 2)
+round(wv.sls$`Max Amp (U)`/ max(wv.sls$`Max Amp (U)`), 2)
+# round(wv.sls$`Leq (dB)`/ max(wv.sls$`Leq (dB)`), 2)
+round(wv.sls$`F-RMS Amp (U)`/ max(wv.sls$`F-RMS Amp (U)`), 2)
+
+
+am45 <- as.vector(na.omit(wv.sls45$`F-RMS Amp (U)`))
+am7 <- as.vector(na.omit(wv.sls7$`F-RMS Amp (U)`))
+
+am45 - am7
+
+plot(am45, am7)
+
+plot(sp45$`Inband Power (dB)`, as.vector(na.omit(sp7$`Inband Power (dB)`)))
+
+plot(log(sp45$`Inband Power (dB)`), log(as.vector(na.omit(sp7$`Inband Power (dB)`))))
+abline(a = 0, b = 1)
+
+plot(sp45$`Avg Power (dB)`, as.vector(na.omit(sp7$`Avg Power (dB)`)))
+abline(a = 0, b = 1)
+
+```
+
+```{r analysis playback response playback, eval = FALSE, echo = FALSE}
+
+est <- readRDS("lbh_amplitude_est_2019.RDS")
+
+table(est$PB, est$indiv)
+
+est$abs.amp <- pbsapply(1:nrow(est), cl = 3, function(x) {
+
+  sf <- read_wave(est, index = x)
+  
+  ab.env <- env(sf, envt = "abs", plot = FALSE)
+  
+  return(mean(ab.env))
+  })
+
+est$hil.amp <- pbsapply(1:nrow(est), cl = 3, function(x) {
+
+  sf <- read_wave(est, index = x)
+  
+  ab.env <- env(sf, envt = "hil", plot = FALSE)
+  
+  return(mean(ab.env))
+  })
+
+est <- sig2noise(mar = 0.05, parallel = 3, X = est, type = 3, before = TRUE)
+
+est$spl <- pbsapply(1:nrow(est), cl = 3, function(x) {
+
+  signal <- read_wave(est, index = x)
+  noise1 <- read_wave(est, index = x, from = 0, to = est$start[x])
+  
+  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
+  noisamp <- seewave::rms(seewave::env(noise1, envt = "abs", plot = FALSE))
+  
+  signaldb <- 20 * log10(sigamp)
+  noisdb <- 20 * log10(noisamp)
+      
+  spl <- 10 * log10((10 ^ (signaldb/ 10)) - (10 ^ (noisdb / 10)))
+  
+    return(spl)
+  })
+
+est$amb.noise <- pbsapply(1:nrow(est), cl = 3, function(x) {
+
+  noise1 <- read_wave(est, index = x, from = 0, to = est$start[x] - 0.01)
+  
+  noisamp <- seewave::rms(seewave::env(noise1, envt = "abs", plot = FALSE))
+  
+  noisdb <- 20 * log10(noisamp)
+      
+    return(noisdb)
+  })
+
+est$crt.amb.noise <- sapply(1:nrow(est), function(x) est$amb.noise[x] - ifelse(length(mean.dff$diff[mean.dff$am == est$audiomoth[x]]) == 1, mean.dff$diff[mean.dff$am == est$audiomoth[x]], NA))
+
+
+est$orig.start <- attr(est, "check.res")$orig.start
+est$orig.sf  <- attr(est, "check.res")$orig.sound.files
+
+# rename before and after
+out <- lapply(unique(est$indiv), function(x) {
+
+    X <- est[est$indiv == x, ]
+
+    wh.bf <- which(X$PB == "before")
+    wh.af <- which(X$PB == "after")
+    
+  if(min(X$orig.start[wh.bf]) > min(X$orig.start[wh.af])){
+    
+    X$PB[wh.bf] <- "after"
+    
+    X$PB[wh.af] <- "before"
+  }
+    
+      return(as.data.frame(X))
+  
+    })
+
+est$PB[est$orig.sf == "413_SUR_27-Jul-2019_14.53_15.13_A45.wav"] <- "after"
+
+est$PB[est$orig.sf == "413_SUR_27-Jul-2019_14.33_14.53_A45.wav" & est$PB == "after"] <- "before"
+
+est <- fix_extended_selection_table(do.call(rbind, out), Y = est)
+
+est$audiomoth <- sapply(as.character(attr(est, "check.res")$orig.sound.files), function(x){
+  
+  y <- strsplit(x, "_", fixed = TRUE)[[1]]
+  return(gsub("\\.wav", "", y[length(y)]))
+  })
+
+saveRDS(est, "lbh_amplitude_est_2019.RDS")
+
+```
+
+```{r, eval = TRUE, echo = FALSE}
+
+# est <- readRDS("lbh_amplitude_est_2019.RDS")
+
+est$PB <- factor(est$PB, levels = c("no_playback", "before", "after"))
+
+table(est$PB, est$indiv)
+
+
+pb.est <- as.data.frame(est[est$PB != "no_playback", ])
+
+pb.est <- droplevels(pb.est)
+
+agg <- aggregate(orig.start ~ indiv + orig.sf + PB, data = pb.est, min)
+
+agg$max <- aggregate(orig.start ~ indiv + orig.sf + PB, data = pb.est, max)[, 4]
+
+agg[order(agg$indiv, agg$orig.sf), ]
+
+subspl <- droplevels(pb.est[ave(-pb.est$spl, pb.est$indiv, pb.est$PB, FUN = rank) <= 10, ])
+
+# mean center
+# subspl$spl.scl <- unlist(lapply(unique(subspl$indiv), function(x) as.vector(scale(subspl$spl[subspl$indiv == x], scale = FALSE))))
+
+# ggplot(subspl, aes(x = PB, y = spl, fill = PB)) +
+#   scale_fill_manual(values = viridis(10)[c(3, 8)]) +
+#   geom_boxplot() + theme_classic(base_size = 16) + 
+#   labs(x = "Playback treatment", y =  "Sound pressure level (dB)") + theme(legend.position="none")
+# 
+# ggplot(subspl, aes(x = PB, y = spl, fill = PB)) +
+#   scale_fill_manual(values = viridis(10)[c(3, 8)]) +
+#   geom_boxplot() + theme_classic(base_size = 16) +
+#   labs(x = "Playback treatment", y = "Sound pressure level (dB)") +
+#   facet_wrap(~ indiv, ncol = 4, scales = "free_y") +
+#   theme(legend.position="none")
+
+subspl$song.type <- sapply(1:nrow(subspl), function(x) agg.spl$song.type[agg.spl$indiv ==subspl$indiv[x]])
+
+agg2 <- aggregate(spl ~ PB + indiv, data= subspl, mean, na.rm = TRUE)
+
+agg2$sd <- aggregate(spl ~ PB + indiv, data= subspl, sd, na.rm = TRUE)[, 3]
+
+agg2$indiv <- factor(agg2$indiv, levels = unique(agg2$indiv)[c(2, 5:8, 1, 3, 4)])
+
+# vegetation by distance
+ggplot(agg2, aes(y = spl, x = PB, col = PB)) +
+  geom_errorbar(aes(ymin = spl - sd, ymax = spl + sd), width = 0.1, lwd =1, position=position_dodge(width=0.3)) +
+  geom_point(size = 3, position = position_dodge(width = 0.3)) +
+  theme_classic(base_size = 14) +
+  scale_color_manual(values=viridis(6)[c(2, 5)]) +
+  labs(x = "Playback treatment", y = "Amplitude (dB)") +
+  guides(color=FALSE) +
+  facet_wrap(~ indiv, scales = "free_y", ncol = 4)
+
+
+md <- MCMCglmm(spl ~ PB, random = ~ indiv + song.type, data = subspl, verbose = FALSE, nitt = 60000)
+
+summary(md)
+
+pb.est2 <- pb.est[!is.na(pb.est$crt.amb.noise), ]
+
+subspl2 <- droplevels(pb.est2[ave(-pb.est2$spl, pb.est2$indiv, pb.est2$PB, FUN = rank) <= 10, ])
+
+md2 <- MCMCglmm(spl ~ crt.amb.noise, random = ~ indiv, data = subspl2, verbose = FALSE, nitt = 60000)
+
+summary(md2)
+
+ggplot(subspl2, aes(y = spl, x = crt.amb.noise)) +
+  geom_point(size = 3, col = viridis(6)[2]) +
+  theme_classic(base_size = 14) +
+  geom_smooth(method='lm',  color = viridis(6)[4]) +
+  # scale_color_manual(values=) +
+  labs(x = "Enviromental noise (dB)", y = "Song amplitude (dB)") 
+
+  
+ggplot(subspl2, aes(y = spl, x = amb.noise, col = indiv)) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 14) +
+  scale_color_manual(values=viridis(8)) +
+  labs(x = "Enviromental noise (dB)", y = "Amplitude (dB)") +
+  facet_wrap(~ indiv, scales = "free")
+
+summary(md2)
+
+for(i in unique(subspl$indiv))
+{
+  print(i)
+  print(kruskal.test(spl ~ PB, data = subspl[subspl$indiv == i, ]))
+}
+
+
+agg.spl <- aggregate(spl ~ indiv, data = subspl2, mean)
+
+agg.spl$song.type  <- c( "A", "B", "C", "C", "B", "B", "A", "D")
+
+subspl2$song.type <- sapply(1:nrow(subspl2), function(x) agg.spl$song.type[agg.spl$indiv ==subspl2$indiv[x]])
+
+
+md3 <- MCMCglmm(spl ~ crt.amb.noise, random = ~ indiv + song.type, data = subspl2, verbose = FALSE, nitt = 60000)
+
+summary(md3)
+
+MuMIn::DIC(md3, md2)
+
+
+
+# summary(md)
+
+```
+
+
+### Amplitude
+
+```{r calibration, eval = FALSE, echo=FALSE}
+
+cal.path <- "/home/m/Dropbox/Projects/LBH_song_amplitude/Audiomoth_calibration"
+
+# autodetec
+ad.cal <- auto_detec(threshold = 4, mindur = 0.4, maxdur = 0.6, ssmooth = 100, path = cal.path, parallel = 3, ls = TRUE, bp = c(6, 8), img = FALSE)
+
+ad.cal$top.freq <- 8
+
+ad.cal$bottom.freq <- 6
+
+ad.shrt <- droplevels(ad.cal[grep("short", ad.cal$sound.files), ])
+ad.lng <- droplevels(ad.cal[grep("long", ad.cal$sound.files), ])
+
+ad.shrt <- ad.shrt[!(ad.shrt$sound.files == "am40short.WAV" & ad.shrt$selec %in% 4:5),]
+
+ad.shrt <- ad.shrt[!(ad.shrt$sound.files == "am45short.WAV" & ad.shrt$selec %in% 1:2),]
+
+ad.lng <- ad.lng[!(ad.lng$sound.files == "am7long.WAV" & ad.lng$selec %in% c(1:3, 24:27)),]
+
+ad.lng <- ad.lng[!(ad.lng$sound.files == "amEZlong.WAV" & ad.lng$selec %in% 33:34),]
+
+ad.lng <- ad.lng[!(ad.lng$sound.files == "amP4long.WAV" & ad.lng$selec %in% 37),]
+
+# specreator(ad.lng, path = cal.path, flim = c(4, 10), xl = 3, by.song = "sound.files", dest.path = cal.path)
+# 
+# unlink(list.files(path = cal.path, pattern = "jpeg$", full.names = TRUE))
+# 
+# table(ad.lng$sound.files) / 4
+# 
+# table(ad.shrt$sound.files) / 3
+
+
+
+ad.shrt <- ad.shrt[order(ad.shrt$sound.files, ad.shrt$start), ]
+
+ad.shrt$sound <- rep(c("HM", "LM", "L"), 49)
+
+ad.lng <- ad.lng[order(ad.lng$sound.files, ad.lng$start), ]
+
+ad.lng$sound <- rep(c("H", "HM", "LM", "L"), 50)
+
+ad.lng$type <- "4_sounds"
+ad.shrt$type <- "3_sounds"
+
+cal.st <- rbind(ad.lng, ad.shrt)
+
+cal.est <- selection_table(cal.st, extended = TRUE, confirm.extended = FALSE, mar = 0.07, max.dur = 10000, path = cal.path)
+
+cal.est$am <- gsub("am|long|short|\\.WAV", "", cal.est$sound.files)
+cal.est$am <- sapply(strsplit(cal.est$am, "_", fixed = TRUE), "[[", 1)
+
+cal.est$spl <- pbsapply(1:nrow(cal.est), cl = 3, function(x) {
+
+  signal <- read_wave(cal.est, index = x)
+  noise1 <- read_wave(cal.est, index = x, from = 0, to = est$start[x])
+  
+  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
+  noisamp <- seewave::rms(seewave::env(noise1, envt = "abs", plot = FALSE))
+  
+  signaldb <- 20 * log10(sigamp)
+  noisdb <- 20 * log10(noisamp)
+      
+  spl <- 10 * log10((10 ^ (signaldb/ 10)) - (10 ^ (noisdb / 10)))
+  
+    return(spl)
+  })
+
+meandb <- function(x) meandB(na.omit(x))
+
+agg <- aggregate(spl ~  sound.files + sound + type + am, data = cal.est, FUN = meandb)
+
+agg$sound <- factor(agg$sound, levels = c("H", "HM", "LM", "L"))
+
+ggplot(agg, aes(x = sound, y = spl, col = am)) + 
+  geom_point() + 
+  facet_wrap(~ type) +
+  theme_classic()
+
+ggplot(agg[agg$sound == "HM", ], aes(x = sound, y = spl, col = am, shape = am)) + 
+  geom_point() + 
+  facet_wrap(~ type) +
+  theme_classic()
+
+
+
+agg2 <- aggregate(spl ~  sound + type + am, data = cal.est, FUN = meandb)
+
+agg2$sound <- factor(agg2$sound, levels = c("H", "HM", "LM", "L"))
+
+ggplot(agg2, aes(x = sound, y = spl, col = am, shape = am)) + 
+  geom_point(size = 4) + 
+  facet_wrap(~ type) +
+  theme_classic()
+
+# only HM
+ggplot(agg2[agg2$sound == "HM", ], aes(x = sound, y = spl, col = am, shape = am)) + 
+  geom_point(size = 4) + 
+  facet_wrap(~ type) +
+  theme_classic()
+
+
+splt1 <- split(agg2, f = list(agg2$sound, agg2$type))
+
+splt1 <- splt1[-1]
+
+out <- lapply(splt1, function(y){
+  
+  x <- y$spl
+  z <- 20 * log10((10^(x/20) / 10^(max(x)/20)))
+
+  names(z) <- y$am
+  
+  z <- sort(z)
+  return(z)    
+})
+
+
+spl.diff <- do.call(rbind, out)
+
+mean.dff <- apply(spl.diff,MARGIN = 2, meandB)
+
+apply(spl.diff,MARGIN = 2, sddB)
+
+
+Y <- splt1$HM.4_sounds
+Y
+
+Y$spl[y$am == "EZ"] 
+Y$spl[y$am == "40"]
+
+Y$spl[y$am == "EZ"] - mean.dff[names(mean.dff) == "EZ"]
+
+# moredB(c(Y$spl[y$am == "EZ"], -1 * mean.dff[names(mean.dff) == "EZ"]))
+
+
+for(i in Y$am)
+print(Y$spl[y$am == i] - mean.dff[names(mean.dff) == i])
+
+mean.dff <- data.frame(am = names(mean.dff), diff = mean.dff)
+
+write.csv(mean.dff, "mean_SPL_difference_by_audiomoth.csv", row.names = FALSE)  
+
+```
+
+```{r calculate spl by recording}
+
+est <- readRDS("lbh_amplitude_est_2019.RDS")
+
+mean.dff <- read.csv("mean_SPL_difference_by_audiomoth.csv", stringsAsFactors = FALSE)  
+
+mean.dff$am <- paste0("A", mean.dff$am)
+
+est$PB <- factor(est$PB, levels = c("no_playback", "before", "after"))
+
+table(est$PB, est$indiv)
+
+amp.est <- est[est$PB != "after", ]
+amp.est <- amp.est[!is.na(amp.est$spl), ]
+
+# leave only the ones calibrated
+amp.est <- amp.est[amp.est$audiomoth %in% mean.dff$am, ]
+
+# correct spl value with calibration values
+amp.est$crt.spl <- sapply(1:nrow(amp.est), function(x) amp.est$spl[x] - mean.dff$diff[mean.dff$am == amp.est$audiomoth[x]])
+
+
+morph <- read_xls("/home/m/Dropbox/LBH data/Additional data files/LBH captures data.xls")
+
+morph <- morph[morph$`Bird ID` %in% unique(amp.est$indiv), ]
+
+
+#total culmen, flattened wing, central rectrice, and body mass
+table(morph$`Bird ID`)
+
+morph <- morph[morph$Day > "2019-01-01", c("Bird ID", "Total culmen", "Flattened wing length", "Central rectriz", "Weight")]
+
+
+
+agg.morph <- aggregate(morph, by = list(morph$`Bird ID`), mean, na.rm = TRUE)[, -1]
+
+pca <- princomp(agg.morph[, -1])
+
+summary(pca)
+pca.morph <- data.frame(indiv = agg.morph$`Bird ID`, PC1= pca$scores[,1])
+
+sub.amp <- amp.est[ave(-amp.est$crt.spl, amp.est$indiv, FUN = rank) <= 10, ]
+
+agg.spl <- aggregate(crt.spl ~ indiv, data = sub.amp, mean)
+
+agg.spl$sd <- aggregate(crt.spl ~ indiv, data = sub.amp, sd)$crt.spl
+
+agg.spl$song.type  <- c("A", "A", "B", "C", "C", "B", "B", "A", "D")
+
+plot(pca.morph$PC1, agg.spl$crt.spl)
+
+plot(pca.morph$PC1, agg.spl$sd)
+
+pca.morph$spl <- agg.spl$crt.spl
+pca.morph$song.type <- agg.spl$song.type
+
+cor.test(pca.morph$PC1, agg.spl$crt.spl)
+
+ggplot(pca.morph, aes(x = PC1, y = spl, col = song.type)) +
+   geom_point(size = 4,  alpha = 0.7) +
+  theme_classic(base_size = 14) +
+  labs(x = "Body size (PC1)", y = "Amplitude (dB)") 
+
+
+# plot(agg.morph$Weight, agg.spl$crt.spl)
+# 
+# cor.test(agg.morph$Weight, agg.spl$crt.spl)
+
+uplft <- read_xlsx(path = "/home/m/Dropbox/LBH data/Morphology-condition/other files/Uplift power experiment.xlsx", sheet = "Results")
+
+
+uplft <- uplft[grep(2019, uplft$Video), ]
+
+
+uplft <- uplft[uplft$ID %in% pca.morph$indiv, ]
+
+
+sub.lft <- uplft[ave(-uplft$Weight, uplft$ID, FUN = rank) <= 10, ]
+
+
+pca.morph2 <- pca.morph[pca.morph$indiv != 402, ]
+pca.morph2$lft <- aggregate(Weight ~ ID, data = sub.lft, mean)$Weight
+
+
+ggplot(pca.morph2, aes(x = lft, y = spl)) +
+  theme_classic(base_size = 14) +
+   geom_smooth(method='lm',  color = viridis(6)[2]) +
+  geom_point(size = 4,  alpha = 0.7, col = viridis(6)[4]) +
+ labs(x = "Load lifting (g)", y = "Amplitude (dB)") 
+
+
+cor.test(pca.morph2$lft, pca.morph2$spl)
+
+```
+
+```{r determine song type, eval = FALSE, echo = FALSE}
+
+set.seed(11)
+s1 <- sample(which(est$indiv == 384), 1)
+
+set.seed(40)
+s2 <- sample(which(est$indiv == 390), 1)
+
+set.seed(10)
+s3 <- sample(which(est$indiv == 397), 1)
+
+subest <- est[ave(-est$SNR, est$indiv, FUN = rank) == 50, ]
+
+subest <- subest[!subest$indiv %in% c(384, 390, 397), ]
+
+subest <- rbind(subest, est[c(s1, s2, s3), ])
+
+catalog(subest, flim = c(1, 13), ovlp= 95, wl = 400, ncol = 3, nrow = 3, labels = "indiv", mar = 0.02, collevels = seq(-100, 0, 1))
+
+```
+
+
+```{r}
+
+# sp <- specan(est, wl = 300, parallel = 3)
+
+freq <- 6565 # the mean peak frequency of the selections
+
+s1 <- synth(cf = freq, f = 44100, d = 0.5, plot = FALSE, output = "Wave")
+
+sl <- silence(duration = 0.5, samp.rate = 44100, xunit = "time")
+
+snd <- pastew(s1, sl, output = "Wave")
+
+for(i in 1:2)
+snd <- pastew(snd, snd, output = "Wave")
+
+snd <- pastew(sl, snd, output = "Wave")
+
+snd <- normalize(snd)
+
+
+df <- data.frame(start = 0.5 + 0:3, end =  1:4)
+
+# range should be ~ 72 - 88.7
+df$amp <- c(5, 2.81, 1.578, 0.89)
+
+for(i in 1:nrow(df)) {
+snd@left[(snd@samp.rate * df$start[i]):(snd@samp.rate * df$end[i])] <- 
+  snd@left[(snd@samp.rate * df$start[i]):(snd@samp.rate * df$end[i])] * df$amp[i]
+
+}
+
+
+ns <- noise(duration = duration(snd), samp.rate = 44100, xunit = "time", bit = 16, pcm = TRUE)
+
+ns <- normalize(ns)
+
+ns@left <- ns@left / 4
+
+snd <- ns + snd
+
+# spectro(snd)
+# 
+# Cdev.off()
+
+oscillo(snd, fastdisp = TRUE, colwave = viridis(1))
+
+snd <- normalize(snd, unit = "16")
+
+
+  
+  
+df$spl <- sapply(1:nrow(df), function(x) {
+
+  
+  signal <- cutw(snd, from = df$start[x], to = df$end[x], output = "Wave")
+  noise1 <- cutw(snd, from = df$start[x]- 0.4, to = df$start[x]- 0.1, output = "Wave")
+
+  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
+  noisamp <- seewave::rms(seewave::env(noise1, envt = "abs", plot = FALSE))
+
+  signaldb <- 20 * log10(sigamp)
+  noisdb <- 20 * log10(noisamp)
+
+  spl <- 10 * log10((10 ^ (signaldb/ 10)) - (10 ^ (noisdb / 10)))
+
+    return(spl)
+  })
+
+df$spl
+
+df$spl[-1] - df$spl[-4]
+
+snd2 <- snd
+for(i in 1:5)
+snd2 <- pastew(snd2, snd, output = "Wave")
+
+oscillo(snd2, fastdisp = TRUE, colwave = viridis(1))
+
+
+writeWave(snd2, "NEW_CALIBRATION_SYNTHETIC_SOUND.wav", extensible = FALSE)
+
+```
+
+### New calibration all audiomoths by Melanie Maria
+
+```{r calibration, eval = FALSE, echo=FALSE}
+
+cal.path <- "/home/m/Dropbox/Projects/LBH_song_amplitude/Audiomoth_calibration"
+
+# select only new calibration files
+fls <- list.files(path = cal.path, pattern = "calibration")
+
+fls <- grep(".WAV$", fls, value = TRUE)
+
+# autodetec
+ad.cal <- auto_detec(threshold = 4, mindur = 0.3, maxdur = 0.7, ssmooth = 100, path = cal.path, parallel = 3, ls = TRUE, bp = c(6, 8), img = FALSE, flist = fls)
+
+# add bottom and top freq
+ad.cal$top.freq <- 8
+ad.cal$bottom.freq <- 6
+
+# remove incomplete sequences at the beggining 
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationam29 (2).WAV" & ad.cal$selec %in% c(1:2)),]
+
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationam32 (2).WAV" & ad.cal$selec %in% c(1)),]
+
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationam40 (2).WAV" & ad.cal$selec %in% c(1:3)),]
+
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationam73 (2).WAV" & ad.cal$selec %in% c(1:2)),]
+
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationez (2).WAV" & ad.cal$selec %in% c(1:3)),]
+
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationamp4 (2).WAV" & ad.cal$selec %in% c(1:3)),]
+
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationam7 (1).WAV" & ad.cal$selec %in% c(1:3)),]
+
+ad.cal <- ad.cal[!(ad.cal$sound.files == "calibrationamez (2).WAV" & ad.cal$selec %in% c(1:3)),]
+
+# add label to type of sound
+out <- lapply(unique(ad.cal$sound.files), function(x){
+  
+  X <- ad.cal[ad.cal$sound.files == x, ]
+  X$sound <- rep(c("H", "HM", "LM", "L"), 100)[1:nrow(X)]
+  return(X)  
+})
+
+ad.cal <- do.call(rbind, out)
+
+# spectrograms
+specreator(ad.cal, path = cal.path, flim = c(4, 10), xl = 3, by.song = "sound.files", dest.path = cal.path, osci = TRUE, title.labels = "sound.files", sel.labels = "sound")
+
+# create EST
+cal.est <- selection_table(ad.cal, extended = TRUE, confirm.extended = FALSE, mar = 0.07, max.dur = 10000, path = cal.path)
+
+# extract Audiomoth names
+cal.est$am <- gsub("am|long|short|\\.WAV|calibration", "", cal.est$sound.files)
+cal.est$am <- sapply(strsplit(cal.est$am, "_", fixed = TRUE), "[[", 1)
+cal.est$trial <- sapply(strsplit(cal.est$am, " (", fixed = TRUE), "[[", 2)
+cal.est$trial <- gsub(")", "", cal.est$trial)
+cal.est$am <- sapply(strsplit(cal.est$am, " (", fixed = TRUE), "[[", 1)
+
+# unique(cal.est$am)
+
+# calculate SPL
+cal.est$spl <- pbsapply(1:nrow(cal.est), cl = 3, function(x) {
+
+  signal <- read_wave(cal.est, index = x)
+  noise1 <- read_wave(cal.est, index = x, from = 0, to = cal.est$start[x])
+  
+  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
+  noisamp <- seewave::rms(seewave::env(noise1, envt = "abs", plot = FALSE))
+  
+  signaldb <- 20 * log10(sigamp)
+  noisdb <- 20 * log10(noisamp)
+      
+  spl <- 10 * log10((10 ^ (signaldb/ 10)) - (10 ^ (noisdb / 10)))
+  
+    return(spl)
+  })
+
+
+# function for meandB removing NAs
+meandb <- function(x) meandB(na.omit(x))
+diff.db <- function(x) x - min(x)
+  
+  
+# aggregate by sound files sound trial and am
+agg <- aggregate(spl ~  sound.files + sound + trial + am, data = cal.est, FUN = meandb)
+
+agg$sound <- factor(agg$sound, levels = c("H", "HM", "LM", "L"))
+
+
+ggplot(agg, aes(x = sound, y = spl, fill = trial)) + 
+  geom_violin() + 
+  facet_wrap(~ am) +
+  theme_classic()
+
+agg2 <- aggregate(spl ~  sound + am, data = cal.est, FUN = meandb)
+
+agg2$sound <- factor(agg2$sound, levels = c("H", "HM", "LM", "L"))
+
+agg2 <- agg2[order(agg2$am, agg2$spl, decreasing = TRUE),]
+
+ggplot(agg2[agg2$am %in% unique(agg2$am)[1:6],], aes(x = sound, y = spl, col = am, shape = am)) + 
+  geom_point(size = 4) + 
+  # facet_wrap(~ trial) +
+  theme_classic()
+
+ggplot(agg2[agg2$am %in% unique(agg2$am)[7:12],], aes(x = sound, y = spl, col = am, shape = am)) + 
+  geom_point(size = 4) + 
+    # facet_wrap(~ trial) +
+  theme_classic()
+
+
+# Primer sonido: 88.2 dB
+# Segundo sonido: 85.0 dB
+# Tercer sonido: 84.6 dB
+# Cuarto sonido: 80.9 dB
+act.dB <- c(88.2, 85.0, 84.6, 80.9)
+
+agg2$soundmtr.dB <- act.dB
+agg2$diff.to.soundmtr <- agg2$soundmtr.dB - agg2$spl
+
+out <- lapply(unique(agg2$am), function(x) {
+  
+  X <- agg2[agg2$am == x, ]
+  X$diff.spl <- X$spl - min(X$spl)
+  # predicted spl
+  X$pred.spl <- X$spl + mean(X$diff.to.soundmtr) 
+  X$pred.spl2 <- 20 * log10((10^(X$spl/20) * 10^(mean(X$diff.to.soundmtr)/20)))
+
+  
+  return(X)
+  
+})
+
+agg2 <- do.call(rbind, out)
+
+a <- aggregate(pred.spl ~ sound, data = agg2, FUN = mean)
+
+sd(a$pred.spl - act.dB)
+
+b <- aggregate(pred.spl2 ~ sound, data = agg2, FUN = mean)
+
+sd(b$pred.spl2 - act.dB)
+
+
+a$soundmeter.spl <- act.dB
+
+mean(abs(a$pred.spl - act.dB))
+
+
+# ###################
+# 
+# splt1 <- split(agg2, f = list(agg2$sound))
+# 
+# # splt1 <- splt1[-1]
+# 
+# out <- lapply(splt1, function(y){
+#   
+#   x <- y$spl
+#   z <- 20 * log10((10^(x/20) / 10^(max(x)/20)))
+# 
+#   names(z) <- y$am
+#   
+#   z <- sort(z)
+#   
+#   # z <- as.data.frame(t(z))
+#   
+#   return(z)    
+# 
+#   })
+# 
+# 
+# spl.diff <- do.call(rbind, out)
+# 
+# mean.dff <- apply(spl.diff,MARGIN = 2, meandB)
+# 
+# apply(spl.diff,MARGIN = 2, sddB)
+# 
+# 
+# Y <- splt1$HM.1
+# Y
+# 
+# Y$spl[Y$am == "ez"] 
+# Y$spl[Y$am == "40"]
+# 
+# Y$spl[Y$am == "ez"] - mean.dff[names(mean.dff) == "ez"]
+# 
+# # moredB(c(Y$spl[y$am == "EZ"], -1 * mean.dff[names(mean.dff) == "EZ"]))
+# 
+# 
+# for(i in Y$am)
+# print(Y$spl[Y$am == i] - mean.dff[names(mean.dff) == i])
+# 
+# mean.dff <- data.frame(am = names(mean.dff), diff = mean.dff)
+
+mean.dff <- aggregate(diff.to.soundmtr ~ am, agg2, mean)
+
+mean.dff$am[mean.dff$am == "ez"] <- "EZ"
+
+write.csv(mean.dff, "mean_SPL_difference_by_audiomoth.csv", row.names = FALSE)  
+
+```
+
+```{r calculate spl by recording}
+
+est <- readRDS("lbh_amplitude_est_2019.RDS")
+
+mean.dff <- read.csv("mean_SPL_difference_by_audiomoth.csv", stringsAsFactors = FALSE)  
+
+mean.dff$am <- paste0("A", mean.dff$am)
+
+est$PB <- factor(est$PB, levels = c("no_playback", "before", "after"))
+
+table(est$PB, est$indiv)
+
+amp.est <- est[est$PB != "after", ]
+amp.est <- amp.est[!is.na(amp.est$spl), ]
+
+# leave only the ones calibrated
+amp.est <- amp.est[amp.est$audiomoth %in% mean.dff$am, ]
+
+# correct spl value with calibration values
+amp.est$crt.spl <- sapply(1:nrow(amp.est), function(x) amp.est$spl[x] + mean.dff$diff.to.soundmtr[mean.dff$am == amp.est$audiomoth[x]])
+
+morph <- read_xls("/home/m/Dropbox/LBH data/Additional data files/LBH captures data.xls")
+
+morph <- morph[morph$`Bird ID` %in% unique(amp.est$indiv), ]
+
+
+#total culmen, flattened wing, central rectrice, and body mass
+table(morph$`Bird ID`)
+
+morph <- morph[morph$Day > "2019-01-01", c("Bird ID", "Total culmen", "Flattened wing length", "Central rectriz", "Weight")]
+
+
+
+agg.morph <- aggregate(morph, by = list(morph$`Bird ID`), mean, na.rm = TRUE)[, -1]
+
+pca <- princomp(agg.morph[, -1])
+
+summary(pca)
+pca.morph <- data.frame(indiv = agg.morph$`Bird ID`, PC1= pca$scores[,1])
+
+sub.amp <- amp.est[ave(-amp.est$crt.spl, amp.est$indiv, FUN = rank) <= 10, ]
+
+agg.spl <- aggregate(crt.spl ~ indiv, data = sub.amp, mean)
+
+agg.spl$sd <- aggregate(crt.spl ~ indiv, data = sub.amp, sd)$crt.spl
+
+agg.spl$song.type  <- c("A", "A", "B", "C", "C", "B", "B", "A", "D")
+
+plot(pca.morph$PC1, agg.spl$crt.spl)
+
+plot(pca.morph$PC1, agg.spl$sd)
+
+pca.morph$spl <- agg.spl$crt.spl
+pca.morph$song.type <- agg.spl$song.type
+
+cor.test(pca.morph$PC1, agg.spl$crt.spl)
+
+ggplot(pca.morph, aes(x = PC1, y = spl, col = song.type)) +
+   geom_point(size = 4,  alpha = 0.7) +
+  theme_classic(base_size = 14) +
+  labs(x = "Body size (PC1)", y = "Amplitude (dB)") 
+
+
+# plot(agg.morph$Weight, agg.spl$crt.spl)
+# 
+# cor.test(agg.morph$Weight, agg.spl$crt.spl)
+
+uplft <- read_xlsx(path = "/home/m/Dropbox/LBH data/Morphology-condition/other files/Uplift power experiment.xlsx", sheet = "Results")
+
+
+uplft <- uplft[grep(2019, uplft$Video), ]
+
+
+uplft <- uplft[uplft$ID %in% pca.morph$indiv, ]
+
+
+sub.lft <- uplft[ave(-uplft$Weight, uplft$ID, FUN = rank) <= 10, ]
+
+
+pca.morph2 <- pca.morph[pca.morph$indiv != 402, ]
+pca.morph2$lft <- aggregate(Weight ~ ID, data = sub.lft, mean)$Weight
+
+
+ggplot(pca.morph2, aes(x = lft, y = spl)) +
+  theme_classic(base_size = 14) +
+   geom_smooth(method='lm',  color = viridis(6)[2]) +
+  geom_point(size = 4,  alpha = 0.7, col = viridis(6)[4]) +
+ labs(x = "Load lifting (g)", y = "Amplitude (dB)") 
+
+
+cor.test(pca.morph2$lft, pca.morph2$spl)
+
+```
+

@@ -1,0 +1,652 @@
+---
+title: <center><font size="6"><b>Calibration</b></font></center>
+subtitle: <center><font size="4"><b>Long-billed hermit song amplitude</b></font></center>
+author: <center><font size="4"><a href="http://marceloarayasalas.weebly.com/">Marcelo Araya-Salas, PhD</a> & Melanie Talavera</font></center> 
+date: <center>`r format(Sys.Date(), "%d-%m-%Y")`</center>
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+fontsize: 12pt 
+editor_options: 
+  chunk_output_type: console
+---
+
+#### Load packages
+```{r Load packages, eval = TRUE, message=FALSE, warning = FALSE}
+
+## vector with package names
+x <- c( "pbapply", "parallel", "ggplot2", "warbleR", "Rraven", "readxl", "Sim.DiffProc", "png", "baRulho", "viridis")
+
+aa <- lapply(x, function(y) {
+  
+  # check if installed, if not then install 
+  if (!y %in% installed.packages()[,"Package"]) 
+    install.packages(y) 
+
+  # load package
+  try(require(y, character.only = T), silent = T)
+})
+
+knitr::opts_knit$set(root.dir = normalizePath(".."), warnings = FALSE, message = FALSE)
+knitr::opts_chunk$set(warnings = FALSE, message = FALSE)
+```
+
+```{r, parameters and functions, eval = TRUE}
+
+calibration.path <- "./data/raw/calibration"
+
+# parameters for calibration
+f = 48
+reps <- 5
+gap.dur <- 1
+
+# for ggplots
+pd <- position_dodge(0.1)
+
+lseq <- function(from=1, to=100000, length.out=6) {
+  # logarithmic spaced sequence
+  # blatantly stolen from library("emdbook"), because need only this
+  exp(seq(log(from), log(to), length.out = length.out))
+}
+
+decrease <- (1 / lseq(length.out = 11))[-11]
+
+wav_dur <- wavdur
+
+detec_saturation <- function(X, parallel = 1, bit = 16, max_amplitude = NULL, path = NULL){
+  
+  if (is.null(max_amplitude))
+  max_amplitude <- max((2 ^ bit) / 2) - 1
+  
+  out <- pblapply(1:nrow(X), cl = parallel, function(x){
+    
+    wv <- read_wave(X, index = x, path = path)
+  
+    out_df <- data.frame(sound.files = X$sound.files[x], selec = X$selec[x], prop.saturated = sum(wv@left == max_amplitude) / length(wv@left))
+    
+    return(out_df) 
+})
+
+ sat_df <- do.call(rbind, out)
+ 
+ 
+ if (any(sat_df$prop.saturated > 0.2))
+ cat(crayon::magenta(paste(sum(sat_df$prop.saturated > 0.2), "selections look saturated (i.e. > 20% of amplitude samples reached the highest value)"))) 
+
+  if (any(all(sat_df$prop.saturated < 0.2) & any(sat_df$prop.saturated > 0.05)))
+ cat(crayon::magenta(paste(sum(sat_df$prop.saturated > 0.05), "selections with some degree of saturation (i.e. < 20% but  > 5% of amplitude samples reached the highest value)"))) 
+
+  if (all(sat_df$prop.saturated < 0.05))
+ cat(crayon::silver("no saturation detected (all selections < 5% of amplitude samples reached the highest value)")) 
+
+ 
+  return(sat_df)
+
+}
+
+
+```
+
+# Measure frequency on real data
+```{r measure frequency on real data, eval = FALSE}
+
+ad.test <- auto_detec(threshold = 25, bp = c(1, 9), ssmooth = 300, path = "./data/processed/recording_cuts", flist = c("397_SUR_02-Feb-2021_09.21_10.32_AAE-6.wav", "416_SUR_08-Feb-2021_07.36_10.47_A3C-4.wav", "417_SUR_27-Jan-2021_07.27_10.14_AED-1.wav", "438_SJA_12-Feb-2021_08.21_09.19_AAE-2.wav", "432_SJA_16-Feb-2021_08.21_11.01_ABB-3.wav", "437_SJA_10-Feb-2021_07.30_10.46_A1A-3.wav", "444_CCL_27_Feb-2021_08.05_08.32_AC8-1.wav", "446_CCL_27-Feb-2021_07.17_07.48_A3C-1.wav", "448_CCL_26-Feb-2021_00.00_00.00_AC8-2.wav"), thinning = 0.05, hold.time = 0.1)
+
+sa <- spectro_analysis(ad.test,  path = "./data/processed/recording_cuts", bp = c(1, 9), ssmooth = 300)
+
+write.csv(sa, file.path(calibration.path, "spectro_analysis_on_subset_for_peak_frequency_for_calibration.csv"), row.names = FALSE)
+
+```
+
+# Amplitude calibration
+```{r creating playback for soundmeter calibration, eval = FALSE}
+
+source('~/Dropbox/R_package_testing/baRulho/baRulho/R/master_sound_file.R')
+source('~/Dropbox/R_package_testing/warbleR/warbleR/R/sim_songs.R')
+source('~/Dropbox/R_package_testing/warbleR/warbleR/R/fade_env_wrblr_int.R')
+
+# remove file created in next line (it cannot be overwritten)
+unlink(file.path(calibration.path, "tones_for_amplitude_test_soundmeter.wav"))
+
+# simulate sounds
+sm_sng_sm <- sim_songs(freq = 6.5, n = length(decrease), harms = 1, diff.fun = "pure.tone", bgn = 0.0001, fin = 0.2, fout = 0.2, shape = "cos", selec.table = TRUE, samp.rate = f, file.name = "tones_for_amplitude_test_soundmeter", path = calibration.path, durs = 5, gaps = gap.dur)
+
+# normalize
+sm_sng_sm$wave <- normalize(sm_sng_sm$wave, unit = "16")
+
+# reduce amplitude 
+for (i in 1:nrow(sm_sng_sm$selec.table))
+sm_sng_sm$wave@left[(sm_sng_sm$selec.table$start[i]*f*1000):(sm_sng_sm$selec.table$end[i]*f*1000)] <- sm_sng_sm$wave@left[(sm_sng_sm$selec.table$start[i]*f*1000):(sm_sng_sm$selec.table$end[i]*f*1000)] * decrease[i]
+
+# seewave::spectro(sm_sng_sm$wave, scale = FALSE, osc = TRUE, heights = c(1, 1), grid = FALSE, flim = c(5, 8), collevels = seq(-100, 0 , 5), palette = reverse.gray.colors.1, ovlp = 0, fast.spec = TRUE)
+
+saveRDS(sm_sng_sm, "./data/raw/calibration/tones_for_amplitude_test_soundmeter.RDS")
+
+writeWave(sm_sng_sm$wave, "./data/raw/calibration/tones_for_amplitude_test_soundmeter.wav", extensible = FALSE)
+
+```
+
+```{r creating playback for audiomoth calibration, eval = FALSE}
+
+# remove file created in next line (it cannot be overwritten)
+unlink(file.path(calibration.path, "tones_for_amplitude_test_audiomoths.wav"))
+
+# simulate sounds
+sm_sng_ams <- sim_songs(freq = 6.5, n = length(decrease), harms = 1, diff.fun = "pure.tone", bgn = 0.0001, fin = 0.05, fout = 0.05, shape = "cos", selec.table = TRUE, samp.rate = f, file.name = "tones_for_amplitude_test_audiomoths", path = calibration.path)
+
+# normalize
+sm_sng_ams$wave <- normalize(sm_sng_ams$wave, unit = "16")
+
+# reduce amplitude 
+for (i in 1:nrow(sm_sng_ams$selec.table))
+sm_sng_ams$wave@left[(sm_sng_ams$selec.table$start[i]*f*1000):(sm_sng_ams$selec.table$end[i]*f*1000)] <- sm_sng_ams$wave@left[(sm_sng_ams$selec.table$start[i]*f*1000):(sm_sng_ams$selec.table$end[i]*f*1000)] * decrease[i]
+
+# seewave::spectro(sm_sng_ams$wave, scale = FALSE, osc = TRUE, heights = c(1, 1), grid = FALSE, flim = c(5, 8), collevels = seq(-100, 0 , 5), palette = reverse.gray.colors.1, ovlp = 0, fast.spec = TRUE)
+
+saveRDS(sm_sng_ams, file.path(calibration.path, "tones_for_amplitude_test_audiomoths.RDS"))
+
+writeWave(sm_sng_ams$wave, file.path(calibration.path, "tones_for_amplitude_test_audiomoths.wav"), extensible = FALSE)
+
+```
+
+```{r creating playback for soundmeter and audiomoth calibration, eval = FALSE}
+
+sm_sng_sm <- readRDS(file.path(calibration.path, "tones_for_amplitude_test_soundmeter.RDS"))
+
+sm_sng_ams <- readRDS(file.path(calibration.path, "tones_for_amplitude_test_audiomoths.RDS"))
+
+sm_sng <- list()
+sm_sng$wave <- pastew(sm_sng_ams$wave, sm_sng_sm$wave, output = "Wave", f = f * 1000)
+
+writeWave(sm_sng$wave, file.path(calibration.path, "tones_for_amplitude_test_audiomoths_and_soundmeter.wav"), extensible = FALSE)
+
+# add duration of tones for soundmeter to tones for audiomoth
+# sm_sng_ams$selec.table$end <- sm_sng_ams$selec.table$end + duration(sm_sng_sm$wave)
+# 
+# sm_sng_ams$selec.table$start <- sm_sng_ams$selec.table$start + duration(sm_sng_sm$wave)
+
+sm_sng$selec.table <- rbind(sm_sng_sm$selec.table, sm_sng_ams$selec.table)
+
+# plot spectro
+# seewave::spectro(clp, scale = FALSE, osc = TRUE, heights = c(1, 1), grid = FALSE, flim = c(5, 8), collevels = seq(-100, 0 , 5), palette = reverse.gray.colors.1)
+
+## replicate audiomoths sound file
+# extract selection table
+st_ams <- sm_sng_ams$selec.table
+
+st_ams2 <- st_ams[1, ]
+st_ams2$end <- st_ams$end[nrow(st_ams)]
+
+for(i in 1:reps)
+st_ams2 <- rbind(st_ams2, st_ams2)
+st_ams2$selec <- 1:nrow(st_ams2)
+
+
+## replicate soundmeter sound file
+# extract selection table
+st_sm <- sm_sng$selec.table[sm_sng$selec.table$sound.files != "tones_for_amplitude_test_audiomoths.wav", ]
+
+st_sm <- sm_sng_sm$selec.table
+
+st_sm2 <- st_sm[1, ]
+st_sm2$end <- st_sm$end[nrow(st_sm)]
+
+for(i in 1:4)
+st_sm2 <- rbind(st_sm2, st_sm2)
+
+st2 <- rbind(st_sm2, st_ams2)
+
+# add freq range (0.5 kHz)
+st2$bottom.freq <- st2$bottom.freq - 0.3
+st2$top.freq <- st2$top.freq + 0.3
+
+st2$selec <- 1:nrow(st2)
+
+# st2$sound.files <- "tones_for_amplitude_test_audiomoths_and_soundmeter.wav"
+
+# make an extended selection table
+synth.est <- selection_table(X = st2, extended = TRUE, pb = FALSE, confirm.extended = FALSE, path = calibration.path, by.song = "sound.files")
+
+# create master sound file
+synth.master.sf <- master_sound_file(X = synth.est, file.name = "calibration_sound_for_audiomoths_and_soundmeter", gap.duration = 1, dest.path = calibration.path, overwrite = TRUE, delay = 0, amp.marker = 1)
+
+
+out <- pblapply(1:nrow(synth.master.sf), function(x){
+  
+  if(grepl("marker", synth.master.sf$orig.sound.file[x])){
+    out <- synth.master.sf[x, ]
+    out$label <- synth.master.sf$orig.sound.file[x]
+    } else {
+      
+      if (grepl("soundmeter", synth.master.sf$orig.sound.file[x]))
+       st_temp <- st_sm else st_temp <- st_ams 
+      
+       # make them start at 0
+      st_temp$end <- st_temp$end - min(st_temp$start) 
+      st_temp$start <- st_temp$start - min(st_temp$start) 
+      st_temp$start <- st_temp$start + synth.master.sf$start[x]  
+      st_temp$end <- st_temp$end + synth.master.sf$start[x]  
+      
+      st_temp$label <- round(decrease, 4)
+      st_temp$orig.sound.file <- synth.master.sf$orig.sound.file[x]
+      out <- st_temp
+    }
+  return(out)
+} )
+
+st3 <- do.call(rbind, out)
+
+st3$bottom.freq <- st3$bottom.freq - 0.25
+st3$top.freq <- st3$top.freq + 0.25
+
+st3$selec <- 1:nrow(st3)
+
+# st3$label <- c("start", rep(seq(1, 0.01, length.out = 10), (nrow(st3) - 2) / 10), "end")
+st3$sound.files <- synth.master.sf$sound.files[1]
+
+full_spectrograms(st3, path = calibration.path, fast.spec = TRUE, labels = "label", sxrow = 8, rows = 34, flim = c(3, 8), ovlp = 0)
+
+write.csv(st3, file.path(calibration.path, "selection_table_audiomoths_and_soundmeter_playback.csv"), row.names = FALSE)
+```
+
+## Sound pressure level from soundmeter for synthetic tones
+ 
+ - Synthetic sounds were created as decreasing amplitude in a log scale
+ 
+```{r measuring sound pressure on soundmeter calibration sound, eval = TRUE}
+calb <- read_excel(file.path(calibration.path, "soundmeter_calibration.xls"))
+
+plot(1:100, calb$`Noise(dB)`[1:100], xlab = "Time (s)", ylab = "SPL (dB)", col = viridis(10)[3], pch = 20, cex = 2)
+
+# xys <- locator(1)
+
+dbdf <- data.frame(dB =calb$`Noise(dB)`[rep(seq(1, 2000, 6) + 8, each = 3) + 0:2])
+dbdf$label <- rep(rep(round(decrease, 5), each = 3), 40)[1:nrow(dbdf)]
+
+# select those that match noise (the rest (> 450) don't match labels)
+dbdf <- dbdf[1:450,]
+
+agg_spl_sm <- aggregate(dB ~ label, data = dbdf, mean)
+
+agg_spl_sm$sd <- aggregate(dB ~ label, data = dbdf, sd)$dB
+agg_spl_sm$sound.files <- "soundmeter"
+agg_spl_sm$label <- c(0.0000, 0.0010, 0.0032, 0.0100, 0.0316, 0.1000, 0.3162, 1.0000, 0.0001, 0.0003)
+```
+
+## Mean (+/- sd) of sound pressure level from soundmeter for each synthetic tone
+```{r measuring sound pressure on soundmeter calibration sound 2, eval = TRUE}
+agg_spl_sm$label_cat <- factor(agg_spl_sm$label, levels = agg_spl_sm$label)
+
+ggplot(agg_spl_sm, aes(x = label_cat, y = dB, color = sound.files)) +
+    geom_errorbar(aes(ymin = dB - sd, ymax = dB + sd),width=.4, position=pd) +
+    geom_line(position=pd) +
+      scale_color_viridis_d(begin = 0.2, end =  0.8) +
+    geom_point(position=pd, size = 2) +
+  theme_classic() + labs(x = "Calibration sound decrease factor", y = "SPL (dB)")
+
+```
+
+```{r detecting calibration sound in audiomoth recordings, eval = FALSE}
+
+sel_tab <- read.csv(file.path(calibration.path, "selection_table_audiomoths_and_soundmeter_playback.csv"))
+
+frng_start <- freq_range(sel_tab[1, ], path = calibration.path)
+
+# adjust start freq range
+sel_tab$bottom.freq[1] <- frng_start$bottom.freq
+sel_tab$top.freq[1] <- frng_start$top.freq
+
+wavs <- list.files(path = calibration.path, pattern = "\\.WAV$")
+
+found_starts <- search_templates(X = sel_tab, 
+template.rows = which(sel_tab$orig.sound.file == "start_marker"), 
+test.files = wavs, path = calibration.path, pb = TRUE, parallel = 1)
+
+write.csv(found_starts, file.path(calibration.path, "starts_for_audiomoth_sync.csv"), row.names = FALSE)
+
+```
+
+```{r fixing delays, eval = FALSE}
+
+found_starts <- read.csv(file.path(calibration.path, "starts_for_audiomoth_sync.csv"))
+
+alg.tests_df <- align_test_files(X = sel_tab, Y = found_starts, path = calibration.path, by.song = TRUE, marker = "end", mar = 0.1, output = "data.frame")
+
+exp_raven(X = alg.tests_df, path = calibration.path, sound.file.path = normalizePath(calibration.path), file.name = "audiomoth_calibration_sound_sync.txt")
+
+fix_time <- data.frame(sound.files = c("calibration_LM_A1A.WAV", "calibration_LM_A3C.WAV", "calibration_LM_A41A.WAV", "calibration_LM_A61.WAV", "calibration_LM_AAE.WAV", "calibration_LM_ABB.WAV", "calibration_LM_AC8.WAV", "calibration_LM_AED.WAV", "calibration_M_A1A.WAV", "calibration_M_A3C.WAV", "calibration_M_A41A.WAV", "calibration_M_A61.WAV", "calibration_M_AAE.WAV", "calibration_M_AC8.WAV", "calibration_LM_A56.WAV"), 
+           fix.start = c(1094.0962 - 1094.0655, 2218.2000 - 2218.1660, 3401.6597 - 3401.6116, 4658.9416 - 4658.8791, 5862.1449 - 5862.1145, 6988.0653 - 6988.0220, 8245.7745 - 8245.7395, 9359.3046 - 9359.2705, 10626.2795 - 10626.2553, 11749.9104 - 11749.8747, 12865.9948 - 12865.9454, 13977.6981 - 13977.6395, 15106.0178 - 15105.9875, 16285.0662 - 16285.0320, 4660.2555 - 4660.2103), 
+           old.selec = c(472, 472, 472, 472, 472, 472, 472, 472, 472, 472, 472, 472, 472, 472, 472))
+
+alg.tests_fix_delay <- alg.tests_df
+
+for(i in 1:nrow(fix_time)){
+      
+  delay <- seq(0, fix_time$fix.start[i], length.out = fix_time$old.selec[i])
+  
+  delay <- c(delay, delay[2:(1 + sum(alg.tests_df$sound.files == fix_time$sound.files[i]) - fix_time$old.selec[i])] + delay[length(delay)])
+  
+  alg.tests_fix_delay$start[alg.tests_fix_delay$sound.files == fix_time$sound.files[i]] <- alg.tests_fix_delay$start[alg.tests_fix_delay$sound.files == fix_time$sound.files[i]] + delay  
+
+  alg.tests_fix_delay$end[alg.tests_fix_delay$sound.files == fix_time$sound.files[i]] <- alg.tests_fix_delay$end[alg.tests_fix_delay$sound.files == fix_time$sound.files[i]] + delay  
+
+  }
+
+  # only for plotting and double-cheching
+alg.tests_fix_delay$bottom.freq <- 3.2
+alg.tests_fix_delay$top.freq <- 7.8
+
+exp_raven(X = alg.tests_fix_delay, path = calibration.path, sound.file.path = normalizePath(calibration.path), file.name = "audiomoth_calibration_sound_sync_delay_fixed.txt")
+
+# full_spectrograms(alg.tests_fix_delay, path = calibration.path, fast.spec = TRUE, labels = "label", sxrow = 8, rows = 60, flim = c(3, 8), ovlp = 0)
+
+alg.tests_fix_delay$label <- sel_tab$label
+
+alg.tests <- selection_table(X = alg.tests_fix_delay, extended = TRUE, path = calibration.path, by.song = "sound.files", mar = 0.1)
+
+alg.tests <- rename_est_waves(alg.tests, new.sound.files = sapply(alg.tests$sound.files, function(x) strsplit(x, split = ".WAV")[[1]][1]))
+
+saveRDS(alg.tests, file.path(calibration.path, "sel_tab_audiomoth_calibration.RDS"))
+
+```
+
+```{r detect saturated re-recorded calibration sounds, eval = FALSE}
+
+alg.tests <- readRDS(file.path(calibration.path, "/sel_tab_audiomoth_calibration.RDS"))
+
+sat_sels <- detec_saturation(X = alg.tests, parallel = 20, bit = 16)
+
+# agg_sat <- aggregate(prop.saturated ~ sound.files + selec, data = sat_sels, mean)
+# 
+# agg_sat <- agg_sat[order(agg_sat$sound.files), ]
+# 
+# agg_sat[agg_sat$prop.saturated > 0.05, ]
+# 
+# agg_sat <- merge(agg_sat, saturated_df)
+# 
+# agg_sat[order(agg_sat$prop.saturated), ]
+
+sum(sat_sels$prop.saturated < 0.01) / nrow(sat_sels)
+
+unsat_sels <- alg.tests[sat_sels$prop.saturated < 0.01, ]
+
+saveRDS(unsat_sels, file.path(calibration.path, "unsaturated_sel_tab_audiomoth_calibration.RDS"))
+
+```
+
+```{r calculating audiomoth calibration dBs, eval = FALSE}
+
+alg.tests <- readRDS(file.path(calibration.path, "unsaturated_sel_tab_audiomoth_calibration.RDS"))
+
+# alg.tests <- alg.tests[grep("marker", alg.tests$template, invert = TRUE), ]
+
+alg.tests$spl_snr <- pbsapply(1:nrow(alg.tests), cl = 20, function(x) {
+
+  signal <- read_wave(alg.tests, index = x, path = calibration.path)
+  
+  noise1 <- read_wave(alg.tests, index = x, from = alg.tests$end[alg.tests$sound.files == alg.tests$sound.files[x]][1] + 0.1, to = alg.tests$end[alg.tests$sound.files == alg.tests$sound.files[x]][1] + 0.9, path = calibration.path)
+    
+  signal <- ffilter(signal, f = signal@samp.rate, from = bp[1] * 1000, to = bp[2] * 1000, bandpass = TRUE, output = "Wave")
+  
+  noise1 <- ffilter(noise1, f = noise1@samp.rate, from = bp[1] * 1000, to = bp[2] * 1000, bandpass = TRUE, output = "Wave")
+    
+  # spectro(signal, flim = c(2, 10), palette = reverse.gray.colors.1, collevels = seq(-100, 0, 5))
+  
+  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
+  noisamp <- seewave::rms(seewave::env(noise1, envt = "abs", plot = FALSE))
+
+  signaldb <- 20 * log10(sigamp)
+  noisdb <- 20 * log10(noisamp)
+
+  spl <- 10 * log10((10 ^ (signaldb/ 10)) - (10 ^ (noisdb / 10)))
+
+    return(spl)
+  })
+
+alg.tests$spl <- pbsapply(1:nrow(alg.tests), cl = 20, function(x) {
+
+  signal <- read_wave(alg.tests, index = x, path = calibration.path)
+  
+   # signal <- ffilter(signal, f = signal@samp.rate, from = bp[1] * 1000, to = bp[2] * 1000, bandpass = TRUE, output = "Wave")
+   
+  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
+  signaldb <- 20 * log10(sigamp)
+  
+    return(signaldb)
+  })
+
+# get mean and sd
+agg_spl <- aggregate(spl ~ sound.files + label, data = alg.tests, meandB)
+agg_spl$sd <- aggregate(spl ~ sound.files + label, data = alg.tests, sddB)$spl
+
+# difference among H for 2 audiomoths
+agg_spl$label <- as.numeric(agg_spl$label)
+
+write.csv(agg_spl, file.path(calibration.path, "spl_by_audiomoth_calibration_sounds.csv"), row.names = FALSE)
+```
+
+## Raw amplitude values (before calibration)
+
+Split in 3 plots to better see specific audiomoths
+
+```{r plotting audiomoth calibration dBs, eval = TRUE}
+
+agg_spl <- read.csv(file.path(calibration.path, "spl_by_audiomoth_calibration_sounds.csv"))
+
+names(agg_spl)[3] <- "dB"
+agg_spl_sm$label_cat <- NULL
+
+agg_spl_all <- rbind(agg_spl_sm, agg_spl)
+
+agg_spl_all$orig.dB <- factor(agg_spl_all$label, levels = unique(agg_spl_all$label))
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_all$sound.files)[2:6]), ], aes(x = orig.dB, y = dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=dB - sd, ymax = dB + sd), colour="black", width=.2, position=pd) +
+  scale_color_viridis_d() +
+    geom_line(position=pd) +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound")
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_all$sound.files)[7:10]), ], aes(x = orig.dB, y = dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=dB - sd, ymax = dB + sd), colour="black", width=.2, position=pd) +
+  scale_color_viridis_d() +
+    geom_line(position=pd) +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound")
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_all$sound.files)[11:16]), ], aes(x = orig.dB, y = dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=dB - sd, ymax = dB + sd), colour="black", width=.2, position=pd) +
+  scale_color_viridis_d() +
+    geom_line(position=pd) +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound")
+
+
+```
+
+## Calibrating audiomoths using proportional adjustment
+
+Note that this way of calibrating has high and non-randomly distributed error
+
+```{r audiomoth calibration 3, eval = TRUE}
+
+agg_spl <- read.csv(file.path(calibration.path, "spl_by_audiomoth_calibration_sounds.csv"))
+
+names(agg_spl)[3] <- "dB"
+agg_spl_sm$sound.files <- "soundmeter"
+agg_spl_sm$label <- sort(as.numeric(unique(agg_spl$label)))
+
+agg_spl_all <- rbind(agg_spl_sm, agg_spl)
+
+agg_spl_all$orig.dB <- factor(agg_spl_all$label, levels = unique(agg_spl_all$label))
+
+agg_spl_all$adj_dB <- agg_spl_all$dB
+
+agg_spl_all <- agg_spl_all[agg_spl_all$label > 0.01, ]
+
+for(i in unique(agg_spl_all$sound.files[agg_spl_all$sound.files != "soundmeter"]))
+agg_spl_all$adj_dB[agg_spl_all$sound.files == i] <- agg_spl_all$adj_dB[agg_spl_all$sound.files == i] *
+  (mean(agg_spl_all$dB[agg_spl_all$sound.files == "soundmeter"])
+/ mean(agg_spl_all$dB[agg_spl_all$sound.files == i]) )
+
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_all$sound.files)[2:6]), ], aes(x = orig.dB, y = adj_dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=adj_dB - sd, ymax = adj_dB + sd, color = sound.files),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound decrease factor")
+
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_all$sound.files)[7:10]), ], aes(x = orig.dB, y = adj_dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=adj_dB - sd, ymax = adj_dB + sd, color = sound.files),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound decrease factor")
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_all$sound.files)[11:16]), ], aes(x = orig.dB, y = adj_dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=adj_dB - sd, ymax = adj_dB + sd, color = sound.files),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound decrease factor")
+```
+
+## Calibrating audiomoths using addition of mean amplitude difference compared to soundmeter
+
+These plots show the SPL estimated by each audiomoths after calibration
+
+```{r audiomoth calibration, eval = TRUE}
+agg_spl <- read.csv(file.path(calibration.path, "spl_by_audiomoth_calibration_sounds.csv"))
+
+names(agg_spl)[3] <- "dB"
+agg_spl_sm$sound.files <- "soundmeter"
+agg_spl_sm$label <- sort(as.numeric(unique(agg_spl$label)))
+
+agg_spl_all <- rbind(agg_spl_sm, agg_spl)
+
+agg_spl_all$orig.dB <- factor(agg_spl_all$label, levels = unique(agg_spl_all$label))
+
+agg_spl_all$adj_dB <- agg_spl_all$dB
+
+agg_spl_all <- agg_spl_all[agg_spl_all$label > 0.01, ]
+
+# remove those with 0.1 not working
+agg_spl_all <- agg_spl_all[!(agg_spl_all$label <= 0.1 & agg_spl_all$sound.files == "calibration_LM_A41A"), ]
+
+agg_spl_all <- agg_spl_all[!(agg_spl_all$label < 0.04 & agg_spl_all$sound.files == "calibration_LM_AAE"), ]
+
+agg_spl_all <- agg_spl_all[!(agg_spl_all$label < 0.04 & agg_spl_all$sound.files == "calibration_M_A41A"), ]
+
+
+for(i in unique(agg_spl_all$sound.files[agg_spl_all$sound.files != "soundmeter"]))
+  agg_spl_all$adj_dB[agg_spl_all$sound.files == i] <- agg_spl_all$adj_dB[agg_spl_all$sound.files == i] +
+mean(agg_spl_all$dB[agg_spl_all$sound.files == "soundmeter" & agg_spl_all$label %in% agg_spl_all$label[agg_spl_all$sound.files == i]]) -
+  mean(agg_spl_all$dB[agg_spl_all$sound.files == i])
+
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", "calibration_LM_A1A", "calibration_LM_A3C", "calibration_LM_A56", "calibration_LM_A61",  "calibration_LM_AAE"), ], aes(x = orig.dB, y = adj_dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=adj_dB - sd, ymax = adj_dB + sd, color = sound.files),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound decrease factor")
+
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", "calibration_LM_ABB", "calibration_LM_AC8", "calibration_LM_AED", "calibration_LM_A41A"), ], aes(x = orig.dB, y = adj_dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=adj_dB - sd, ymax = adj_dB + sd, color = sound.files),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound decrease factor")
+
+ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", "calibration_M_A1A", "calibration_M_A3C", "calibration_M_A41A", "calibration_M_A61", "calibration_M_AAE", "calibration_M_AC8"), ], aes(x = orig.dB, y = adj_dB, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=adj_dB - sd, ymax = adj_dB + sd, color = sound.files),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound decrease factor")
+```
+
+## Error margin after adjusting SPL from audiomoths
+```{r error margin after adjusting SPL from audiomoths, eval = TRUE}
+agg_spl_all <- agg_spl_all[order(agg_spl_all$sound.files, agg_spl_all$label), ]
+
+mean_diff_dB_l <- lapply(unique(agg_spl_all$sound.files), function(x){  
+  diffs <- agg_spl_all$dB[agg_spl_all$sound.files == "soundmeter" & agg_spl_all$label %in% agg_spl_all$label[agg_spl_all$sound.files == x]] - agg_spl_all$dB[agg_spl_all$sound.files == x] 
+    
+  out_df <- data.frame(sound.files = x, mean.diff = mean(diffs), sd.diff = sd(diffs))
+
+  return(out_df)
+})
+
+mean_diff_dB <- do.call(rbind, mean_diff_dB_l)
+
+mean_diff_dB$sd.diff[16] <- max(agg_spl_sm$sd)
+
+
+mean_diff_dB <- mean_diff_dB[order(mean_diff_dB$sd.diff), ]
+
+mean_diff_dB$sound.files <- factor(mean_diff_dB$sound.files, levels = mean_diff_dB$sound.files[order(mean_diff_dB$mean.diff)])
+
+ggplot(mean_diff_dB, aes(x = sound.files, y = mean.diff, group = sound.files, color = sound.files)) +
+    geom_errorbar(aes(ymin=mean.diff - sd.diff, ymax = mean.diff + sd.diff, color = sound.files),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d(end = 0.8) +
+    geom_point(position=pd, size=1) +
+  theme_classic() + labs(x = "Calibration sound decrease factor") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+```
+
+# SPL adjustment for amplitude calibration 
+
+```{r spl adjusting, eval = TRUE}
+
+knitr::kable(mean_diff_dB)
+
+write.csv(mean_diff_dB, "./output/spl_constant_for_audiomoth_calibration.csv", row.names = FALSE)
+
+```
+
+
+```{r test for detecting saturation, eval = FALSE}
+
+saturated_df <- data.frame(sound.files = c("calibration_LM_A1A.WAV", "calibration_LM_A1A.WAV", "calibration_LM_A3C.WAV", "calibration_LM_A3C.WAV", "calibration_LM_A61.WAV", "calibration_LM_AED.WAV", "calibration_LM_AED.WAV", "calibration_M_A1A.WAV", "calibration_M_A1A.WAV", "calibration_M_A1A.WAV", "calibration_M_A1A.WAV", "calibration_M_A61.WAV", "calibration_M_A61.WAV", "calibration_M_A61.WAV", "calibration_M_A61.WAV", "calibration_M_AAE.WAV", "calibration_M_AAE.WAV", "calibration_M_AAE.WAV", "calibration_M_AAE.WAV", "calibration_M_AC8.WAV", "calibration_M_AC8.WAV", "calibration_M_AC8.WAV", "calibration_M_AC8.WAV", "calibration_M_AC8.WAV", "calibration_M_AC8.WAV", "calibration_M_AC8.WAV", "calibration_M_AC8.WAV"),
+                           selec = c(432, 472, 2, 12, 2, 2, 32, 42, 82, 172, 352, 12, 52, 222, 302, 12, 82, 222, 262, 32, 62, 252, 282, 33, 63, 253, 283),
+                           type = c("fine", "fine", "partial_saturation", "fine", "fine", "partial_saturation", "fine", "saturated", "saturated", "saturated",  "saturated",  "saturated",  "saturated", "saturated",  "saturated", "saturated", "saturated", "saturated", "saturated", "saturated", "saturated", "saturated", "saturated", "fine", "fine", "fine", "fine")) 
+
+saturated_df$sound.files <- gsub("\\.WAV$", "", saturated_df$sound.files)
+saturated_df$sf.selec <- paste(saturated_df$sound.files, saturated_df$selec, sep = "-")
+
+alg.tests <- readRDS(file.path(calibration.path, "/sel_tab_audiomoth_calibration.RDS"))
+
+alg.tests$sf.selec <- paste(alg.tests$sound.files, alg.tests$selec, sep = "-")
+
+# extract examples for detecting saturation
+sat_est <- alg.tests[alg.tests$sf.selec %in% saturated_df$sf.selec, ]
+
+alg.tests$sf.selec <- saturated_df$sf.selec <- NULL
+
+sat_est <- merge(sat_est, saturated_df, by = c("sound.files", "selec"))
+
+sat_est <- fix_extended_selection_table(X = sat_est, Y = alg.tests)
+
+sat <- detec_saturation(X = sat_est, parallel = 20)
+
+sat[order(sat$type), ]
+
+```
+
+## Session information
+```{r}
+
+sessionInfo()
+
+```
+

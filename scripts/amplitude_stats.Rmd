@@ -1,0 +1,699 @@
+---
+title: <center><font size="6"><b>Detecting songs</b></font></center>
+subtitle: <center><font size="4"><b>Long-billed hermit song amplitude</b></font></center>
+author: <center><font size="4"><a href="http://marceloarayasalas.weebly.com/">Marcelo Araya-Salas, PhD</a> & Melanie Talavera</font></center> 
+date: <center>`r format(Sys.Date(), "%d-%m-%Y")`</center>
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    df_print: kable
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+fontsize: 12pt 
+editor_options: 
+  chunk_output_type: console
+---
+
+#### Load packages
+```{r Load packages, eval = TRUE, message=FALSE, warning = FALSE}
+
+## vector with package names
+x <- c( "pbapply", "parallel", "ggplot2", "warbleR", "Rraven", "viridis", "readxl", "rptR", "MCMCglmm", "MuMIn", "corrplot", "lme4")
+
+aa <- lapply(x, function(y) {
+  
+  # check if installed, if not then install 
+  if (!y %in% installed.packages()[,"Package"]) 
+    install.packages(y) 
+
+  # load package
+  try(require(y, character.only = T), silent = T)
+})
+
+```
+
+#### Functions and parameters
+```{r functions and parameters, eval = TRUE}
+
+#functions and parameters
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+
+knitr::opts_chunk$set(dpi = 50, fig.width = 12, warning = FALSE) 
+
+# ggplot2 theme
+# theme_set(theme_classic(base_size = 20))
+
+cut_path <- "./data/processed/recording_cuts"
+
+treatments <- c("Calibration", "Regular_sining", "Coordination", "After_chase",  
+ "Before_playback", "After_playback", "Before_interaction", "After_interaction", "Before_noise", "After_noise")
+
+# iterations for MCMCglmm models
+itrns <- 50000
+
+# functions from https://rdrr.io/rforge/rptR/src/R/rpt.mcmcLMM.R
+rpt.mcmcLMM <- function(y, groups, CI=0.95, prior=NULL, verbose=FALSE, ...){
+	# initial checks
+	if(length(y)!= length(groups)) stop("y and group are of unequal length")
+	# preparation
+	groups <- factor(groups)
+	if(is.null(prior)) prior <- list(R=list(V=1,n=10e-2), G=list(G1=list(V=1,n=10e-2)) )
+ 	# point estimation according to model 8 and equation 9
+	mod   <- MCMCglmm(y ~ 1, random=~groups, family="gaussian", data=data.frame(y=y,groups=groups), prior=prior, verbose=verbose, ...)
+	var.a <- mod$VCV[,"groups"]
+	var.e <- mod$VCV[,"units"]
+	postR <- var.a / (var.a + var.e)
+	# point estimate
+	R     <- posterior.mode( postR )
+	# credibility interval estimation from paterior distribution
+	CI.R    <- coda::HPDinterval(postR,CI)[1,]
+	se 	    <- sd(postR)
+	# 'significance test'
+	P 	  <- NA
+	res = list(call=match.call(), datatype="Gaussian", method="LMM.MCMC", CI=CI, 
+				R=R, CI.R=CI.R, se=se, P=P) 
+	# class(res) <- "rpt"
+	return(res) 
+}
+
+
+
+```
+
+```{r read data, eval = TRUE}
+
+amp <- read.csv("./output/calibrated_amplitude_all_songs.csv")
+
+# extract hour
+amp$time <- as.numeric(substr(amp$sound.files, 21, 22))
+
+amp$time[amp$org.sound.file == "448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV"] <- 8
+
+amp$period <- ifelse(amp$time > 12, "afternoon", "morning")
+
+
+# add lek
+amp$lek <- substr(amp$org.sound.file, 5, 7)
+
+# add song type
+songtype_df <- read.csv("./output/songtype_classification.csv")
+
+amp$songtype <- sapply(1:nrow(amp), function(x) songtype_df$songtype[songtype_df$ID == amp$ID[x]])
+
+```
+
+# Repeatability
+```{r repeatability, eval = FALSE}
+
+# keep only morning recs
+amp_morn <- amp[amp$period == "morning", ]
+
+# keep only males recorded at least twice 
+count_sf <- table(amp$ID[!duplicated(amp$org.sound.file)])
+
+amp_morn_rep <- amp_morn[amp_morn$ID %in% names(count_sf)[count_sf > 1], ]
+
+# keep only regular singing
+amp_morn_rep <- amp_morn_rep[amp_morn_rep$Treatment == "Regular_sining",]
+
+
+max_quantile <- c(0, 1, seq(10, 90, by = 10)) / 100
+outliers <- c(0, 1, 2, 5, 10, 20) / 100
+
+rep_grid <- expand.grid(max_quantile = max_quantile, outliers = outliers, only.low.outliers = c(TRUE, FALSE))
+
+repts <- pblapply(1:nrow(rep_grid), cl = 6, function(x){  
+  
+  quant_subet <- lapply(unique(amp_morn_rep$org.sound.file), function(y){
+    X <- amp_morn_rep[amp_morn_rep$org.sound.file == y, ]
+    
+    # remove outliers
+    outlier_quant <- quantile(X$cal.spl, c(rep_grid$outliers[x], 1- rep_grid$outliers[x]))
+  
+        if (!rep_grid$only.low.outliers[x])
+    X <- X[X$cal.spl >= outlier_quant[1] & X$cal.spl <= outlier_quant[2],] else  X <- X[X$cal.spl >= outlier_quant[1],]
+    
+    # quantlie for each max quantile
+    quant <- quantile(X$cal.spl, probs = 1 - rep_grid$max_quantile[x])
+    
+    # subset
+   X <- X[X$cal.spl >= quant, ]
+  })
+  
+  quant_subet <- do.call(rbind, quant_subet)
+  
+  # frequentist
+    # out <- rpt(cal.spl ~ (1 | ID), grname = "ID", data = quant_subet, datatype = "Gaussian", npermut = 0, nboot = 100)
+
+  # bayesian
+    out <- rpt.mcmcLMM(y = quant_subet$cal.spl, groups = quant_subet$ID, nitt = itrns)
+    
+  out_df <- data.frame(rep_grid$max_quantile[x], rep_grid$outliers[x], rep_grid$only.low.outliers[x], out$R, out$CI.R[1], out$CI.R[2])
+  
+  return(out_df)
+  })
+
+repts_df <- do.call(rbind, repts)
+
+names(repts_df) <- c("max_quantile", "outliers", "only.low.outliers", "repeatability", "lowCI", "hiCI")
+
+write.csv(repts_df, "./output/repeatability_optimization.csv", row.names = FALSE)
+
+```
+
+- Different subsets of data for upper quantiles (x axis)
+- Pannels show the proportion of outliers removed
+
+```{r repeatability plot, eval = TRUE, fig.height=10, fig.width=18}
+repts_df <- read.csv("./output/repeatability_optimization.csv")
+
+pd <- position_dodge(width = 0.1)
+ggplot(data = repts_df, aes(x = 1 - max_quantile, y = repeatability, color = only.low.outliers, group = only.low.outliers)) + 
+  geom_hline(yintercept = 0.5, col = "red") +
+  geom_point(size = 2, position = pd) +
+  geom_errorbar(width=.05, aes(ymin = lowCI, ymax = hiCI), position = pd) +
+  scale_color_viridis(discrete = TRUE, begin = 0.2, end = 0.8, alpha = 0.7) +
+  geom_line(position = pd) + 
+  labs(y = "Repeatability",  x = "Upper quantile used") +
+  ylim(c(0, 1)) + xlim(c(1, 0)) +
+  facet_wrap(~ outliers, scales = "fixed") + 
+  theme_classic(base_size = 24)
+  
+
+repts_df$range <- repts_df$hiCI - repts_df$lowCI
+
+# repts_df[order(repts_df$repeatability), c("max_quantile", "outliers", "only.low.outliers", "repeatability", "range")]
+
+repts_df2 <- repts_df[repts_df$only.low.outliers == FALSE,]
+
+agg_outliers <- aggregate(cbind(repeatability, range) ~ outliers, data = repts_df2, FUN = mean)
+
+repts_df2 <- repts_df2[repts_df2$outliers == agg_outliers$outliers[which.max(agg_outliers$repeatability)]
+, ]
+
+agg_quantile <- aggregate(cbind(repeatability, range) ~ max_quantile, data = repts_df2, FUN = mean)
+
+max_quant <- agg_quantile$max_quantile[which.max(agg_quantile$repeatability)]
+```
+
+<div class="alert alert-info">
+
+ - Excluding lowest values increases repeatability
+ - Excluding outliers doesn't have a strong effect but removing 0.2 outliers produced the highest repeatability
+ - Removing lower tail outliers or both works similarly
+
+
+</div>
+
+Subsetting the 0.3 upper quartile after excluding 0.2 outliers:
+
+```{r apply subseting based on repeatability, eval = TRUE}
+
+# compose variable to remove low values and outliers based on repeatabiliy
+amp$osf.treat <- paste(amp$org.sound.file, amp$Treatment, sep = "-")
+
+rm_outlier_amp_l <- lapply(unique(amp$osf.treat), function(y){
+    X <- amp[amp$osf.treat == y, ]
+    
+    # remove outliers
+    outlier_quant <- quantile(X$cal.spl, c(0.2, 0.8))
+    X <- X[X$cal.spl >= outlier_quant[1] & X$cal.spl <= outlier_quant[2],]
+    
+    # quantlie for each max quantile (0.6 was selected due to high repeatability)
+    quant <- quantile(X$cal.spl, probs = 1 - 0.7)
+    
+    # subset
+   X <- X[X$cal.spl >= quant, ]
+  })
+
+rm_outlier_amp <- do.call(rbind, rm_outlier_amp_l)
+
+```
+
+```{r classify song types, eval = FALSE}
+
+# options for warbleR
+warbleR_options(wav.path = cut_path, wl = 400)
+check_sels(rm_outlier_amp)
+
+# measure signal to noise ratio
+snr <- sig2noise(rm_outlier_amp, 0.1)
+
+# get the 3 songs with the highest SNR for each individual
+examp_l <- lapply(unique(snr$ID), function(x) {
+  
+  X <- snr[snr$ID == x, ]
+  
+  X <- X[order(X$SNR, decreasing = TRUE), ]
+  
+  return(X[1:3, ])
+})
+
+# make it a data frame
+examp <- do.call(rbind, examp_l)
+
+# add lek label
+examp$lek <- substr(examp$org.sound.file, 5, 7)
+
+# make catalog
+catalog(examp, flim = c(0, 14), ovlp = 95, nrow = 10, ncol = 6, wl = 400, pal = viridis, collevels = seq(-100, 0, 1), labels = c("ID", "lek"), width = 15.5, height = 8.5, res = 200, tags = c("lek"), tag.pal = list(magma), mar = 0.005, hatching = 2)
+
+move_imgs(from = cut_path, to = "./data/raw", overwrite = TRUE)
+
+
+songtype_df <- data.frame(ID = c(397, 400, 403, 413, 415, 416, 417, 419, 422, 423, 424, 432, 433, 435, 437, 438, 444, 446, 448, 449), songtype = c("a", "b", "f", "c", "f", "c", "c",  "g",  "e", "c", "d", "h", "i", "j", "i", "j", "l", "k", "l", "m"))
+
+
+write.csv(songtype_df, "./output/songtype_classification.csv", row.names = FALSE)
+
+
+``` 
+
+
+# Amplitude vs day period (morning / afternoon)
+
+Only for individuals recorded in both periods
+
+```{r ampltiude vs period models, eval = FALSE}
+
+# model amplitude by body size
+period_formulas <- c("cal.spl ~ 1", "cal.spl ~ period")
+
+period_mods <- pblapply(period_formulas, function(x){
+  
+  replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID + songtype, data = rm_outlier_amp[rm_outlier_amp$Treatment == "Regular_sining" & rm_outlier_amp$ID %in% unique(rm_outlier_amp$ID[rm_outlier_amp$period == "afternoon"]), ], verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
+  
+})
+
+names(period_mods) <- gsub("cal.spl ~ ", "", period_formulas)
+saveRDS(list(period_formulas = period_formulas, period_mods = period_mods), "./output/mcmcglmm_period_models.RDS")
+
+```
+
+## Model selection
+```{r ampltiude vs period model selection, eval = TRUE}
+
+attach(readRDS("./output/mcmcglmm_period_models.RDS"))
+
+mod_list <- lapply(period_mods, "[[", 1)
+
+names(mod_list) <- gsub("cal.spl ~ ", "", period_formulas)
+
+model_selection <- model.sel(mod_list, rank="DIC")
+
+model_selection
+
+```
+
+## Best model summary
+```{r ampltiude vs period effect size, eval = TRUE}
+
+# fixed effects with HPD intervals
+best_mod_period <- period_mods[[which(names(period_mods) == row.names(model_selection)[1])]][[1]]
+
+sm <- as.data.frame(summary(best_mod_period)$solutions[, -5])
+
+sm
+```
+
+```{r plot best model period, fig.height=10, fig.width=16}
+
+dat_period <- rm_outlier_amp[rm_outlier_amp$Treatment == "Regular_sining" & rm_outlier_amp$ID %in% unique(rm_outlier_amp$ID[rm_outlier_amp$period == "afternoon"]), ]
+
+dat_period$period <- factor(dat_period$period, levels = c("morning", "afternoon"))
+
+ggplot(dat_period, aes(x = as.factor(ID), y = cal.spl, color = period, fill = period)) +
+  geom_violin(position =  pd) +
+  labs(x = "Individual", y = "Sound pressure level (dB)", fill = "Period") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.6) +
+  scale_fill_viridis_d(begin = 0.1, end = 0.8, alpha = 0.6) +
+  guides(color = FALSE) +
+  theme_classic(base_size = 24) 
+
+```
+
+# Amplitude vs body size
+```{r ampltiude vs body size, eval = TRUE}
+
+caps <- read_excel("/home/m/Dropbox/LBH data/Additional data files/LBH captures data.xlsx")
+
+# same variables as in paper on spatial memory and body size  
+size_vars <- caps[caps$`Bird ID` %in% amp$ID, c("Bird ID", "Total culmen", "Flattened wing length", "Weight", "Central rectriz")]
+
+# replace 419 central rectriz with mean
+size_vars$`Central rectriz`[size_vars$`Bird ID` == 419] <- mean(size_vars$`Central rectriz`, na.rm = TRUE)
+
+cor(size_vars[, c("Total culmen", "Flattened wing length", "Weight", "Central rectriz")], use = "pairwise.complete.obs")
+
+mean_size <- aggregate(. ~ `Bird ID`, data = size_vars, FUN = mean, na.action = "na.omit")
+
+pca <- prcomp(mean_size[, c("Total culmen", "Flattened wing length", "Weight", "Central rectriz")], scale. = TRUE)
+
+summary(pca)
+
+mean_size$PC1 <- pca$x[, 1]
+
+
+rm_outlier_amp$PC1 <- sapply(1:nrow(rm_outlier_amp), function(x) mean_size$PC1[mean_size$`Bird ID` == rm_outlier_amp$ID[x]])
+
+rm_outlier_amp$weight <- sapply(1:nrow(rm_outlier_amp), function(x) mean_size$Weight[mean_size$`Bird ID` == rm_outlier_amp$ID[x]])
+
+
+```
+
+```{r ampltiude vs body size models, eval = FALSE}
+
+# model amplitude by body size
+size_formulas <- c("cal.spl ~ 1", "cal.spl ~ PC1", "cal.spl ~ PC1 + period", "cal.spl ~ PC1 * period")
+
+size_mods <- pblapply(size_formulas, function(x){
+  
+  replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID + songtype, data = rm_outlier_amp[rm_outlier_amp$Treatment == "Regular_sining", ], verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
+  
+})
+
+names(size_mods) <- gsub("cal.spl ~ ", "", size_formulas)
+saveRDS(list(size_formulas = size_formulas, size_mods = size_mods), "./output/mcmcglmm_size_models.RDS")
+
+```
+
+## Model selection
+```{r ampltiude vs body size model selection, eval = TRUE}
+
+attach(readRDS("./output/mcmcglmm_size_models.RDS"))
+
+mod_list <- lapply(size_mods, "[[", 1)
+
+names(mod_list) <- gsub("cal.spl ~ ", "", size_formulas)
+
+model_selection <- model.sel(mod_list, rank="DIC")
+
+model_selection
+
+```
+
+## Best model summary
+```{r ampltiude vs body size effect size, eval = TRUE}
+
+# fixed effects with HPD intervals
+best_mod_size <- size_mods[[which(names(size_mods) == row.names(model_selection)[1])]][[1]]
+
+sm_size <- as.data.frame(summary(best_mod_size)$solutions[, -5])
+
+sm_size
+```
+
+```{r ampltiude vs body size plot, fig.height=10, fig.width=16}
+
+dat_size <- rm_outlier_amp[rm_outlier_amp$Treatment == "Regular_sining", ]
+
+dat_size$period <- factor(dat_size$period, levels = c("morning", "afternoon"))
+
+
+# ggplot(dat_size, aes(x = PC1, y = cal.spl, color = period)) +
+#   geom_point(size = 2, position = "jitter") +
+#   labs(x = "Body size (PC1)", y = "Sound pressure level (dB)", color = "Period") +
+#   scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.2) +
+#   theme_classic(base_size = 24) + 
+#   geom_abline(slope = c(ES_continious = sm_size[2, 1], ES_continious_plus_ES_interaction=  sm_size[2, 1] + sm_size[4, 1]), intercept = c(intercept = sm_size[1, 1], intercept_plus_ES_categorical = sm_size[1, 1] + sm_size[3, 1]), color = viridis(2, begin = 0.2, end = 0.8, alpha = 0.6)[2:1], size = 1)
+
+agg_size <- aggregate(cbind(cal.spl, PC1) ~ ID + period, data = dat_size, mean)
+agg_size$count <- aggregate(PC1 ~ ID + period, data = dat_size, length)$PC1
+
+ggplot(agg_size, aes(x = PC1, y = cal.spl, color = period)) +
+  # geom_point(size = 2, position = "jitter") +
+    geom_jitter(position = position_jitter(width = 0.2, height = 0.2), aes(size = count)) +
+  labs(x = "Body size (PC1)", y = "Sound pressure level (dB)", color = "Period", size = "Sample size") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
+  theme_classic(base_size = 24) + 
+  geom_abline(slope = c(ES_continious = sm_size[2, 1], ES_continious_plus_ES_interaction=  sm_size[2, 1] + sm_size[4, 1]), intercept = c(intercept = sm_size[1, 1], intercept_plus_ES_categorical = sm_size[1, 1] + sm_size[3, 1]), color = viridis(2, begin = 0.2, end = 0.8, alpha = 0.6)[2:1], size = 1) +
+guides(colour = guide_legend(override.aes = list(size=8)))
+
+```
+
+# Playback
+
+Ramdom slope models, using data from 2019 and 2021
+
+```{r NOT USED YET, eval = FALSE}
+
+# model amplitude by body size
+playback_formulas <- c("cal.spl ~ 1", "cal.spl ~ Treatment", "cal.spl ~ Treatment + period", "cal.spl ~ Treatment * period")
+
+playback_mods <- pblapply(playback_formulas, function(x){
+  
+  replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID + songtype, data = rm_outlier_amp[rm_outlier_amp$Treatment %in% c("Before_playback", "After_playback"), ], verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
+  
+})
+
+names(playback_mods) <- gsub("cal.spl ~ ", "", playback_formulas)
+
+saveRDS(list(playback_formulas = size_formulas, playback_mods = playback_mods), "./output/mcmcglmm_playback_models.RDS")
+```
+
+```{r  ampltiude vs playback models, eval = FALSE}
+
+# model amplitude by body size
+playback_formulas <- c("cal.spl ~ 1  + (1|ID) + (1|songtype)", "cal.spl ~ Treatment  + (1|ID) + (1|songtype)", "cal.spl ~ 1  + (Treatment|ID) + (1|songtype)", "cal.spl ~ Treatment  + (Treatment|ID) + (1|songtype)", "cal.spl ~ 1  + (Treatment|ID) + (Treatment|songtype)", "cal.spl ~ Treatment  + (Treatment|ID) + (Treatment|songtype)")
+
+playback_mods <- pblapply(playback_formulas, function(x){
+  
+lmer(as.formula(x), data = rm_outlier_amp[rm_outlier_amp$Treatment %in% c("Before_playback", "After_playback"), ], REML = FALSE)
+})
+
+names(playback_mods) <- gsub("cal.spl ~ ", "", playback_formulas)
+
+saveRDS(list(playback_formulas = playback_formulas, playback_mods = playback_mods), "./output/lme4_playback_models.RDS")
+
+```
+
+```{r  ampltiude vs playback model selection, eval = TRUE}
+
+attach(readRDS("./output/lme4_playback_models.RDS"))
+
+names(playback_mods) <- gsub("cal.spl ~ ", "", playback_formulas)
+
+model_selection <- model.sel(playback_mods, rank="DIC")
+
+model_selection
+```
+
+## Best model summary
+```{r ampltiude vs playback effect size, eval = TRUE}
+
+# fixed effects with HPD intervals
+best_mod_playback <- playback_mods[[which(names(playback_mods) == row.names(model_selection)[1])]]
+
+# coef(best_mod_playback)
+
+sm_playback <- as.data.frame(fixef(best_mod_playback), confint(best_mod_playback))
+
+sm_playback
+
+```
+
+Note that data for individuals recorded in 2019 is not properly calibrated and has been centered around the population's average
+
+```{r ampltiude vs playback plot, fig.height=10, fig.width=16}
+
+sub_dat <- rm_outlier_amp[rm_outlier_amp$Treatment %in% c("Before_playback", "After_playback"), ]
+
+sub_dat$ID <- ifelse(grepl("2019", sub_dat$org.sound.file), paste(sub_dat$ID, "(2019)"), sub_dat$ID)
+
+agg_playback <- aggregate(cal.spl ~ Treatment + ID, data = sub_dat, mean)
+
+agg_playback$sd <- aggregate(cal.spl ~ Treatment + ID, data = sub_dat, sd)$cal.spl
+
+agg_playback$Treatment <- factor(gsub("_playback", "", agg_playback$Treatment), levels = c("Before", "After"))
+
+ggplot(agg_playback, aes(x = Treatment, y = cal.spl, color = Treatment)) +
+  geom_point(size = 2, show.legend = FALSE) +
+   geom_errorbar(width=.05, aes(ymin = cal.spl - sd, ymax = cal.spl + sd), show.legend = FALSE) +
+ 
+  labs(x = "Playback treatment", y = "Sound pressure level (dB)", color = "Period") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 1) +
+  facet_wrap(~ ID, nrow = 2, scales = "free_y") +
+  theme_classic(base_size = 24)
+
+```
+
+
+# Amplitude vs coordination
+
+Only for individuals in which coordination was observed when recorded
+
+```{r ampltiude vs period models MCMCGLMM NOT USED, eval = FALSE}
+
+# model amplitude by coordination
+coord_formulas <- c("cal.spl ~ 1", "cal.spl ~ Treatment", "cal.spl ~ Treatment + period", "cal.spl ~ Treatment * period")
+
+coord_mods <- pblapply(coord_formulas, function(x){
+  
+  replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID + songtype, data = rm_outlier_amp[rm_outlier_amp$Treatment %in% c("Coordination", "Regular_sining") & rm_outlier_amp$ID %in% unique(rm_outlier_amp$ID[rm_outlier_amp$Treatment == "Coordination"]), ], verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
+  
+})
+
+names(coord_mods) <- gsub("cal.spl ~ ", "", coord_formulas)
+
+saveRDS(list(coord_formulas = coord_formulas, coord_mods = coord_mods), "./output/mcmcglmm_coord_models.RDS")
+
+```
+
+```{r  ampltiude vs coordination models, eval = FALSE}
+
+# model amplitude by body size
+coord_formulas <- c("cal.spl ~ 1  + (1|ID) + (1|songtype)", "cal.spl ~ Treatment  + (1|ID) + (1|songtype)", "cal.spl ~ 1  + (Treatment|ID) + (1|songtype)", "cal.spl ~ Treatment  + (Treatment|ID) + (1|songtype)", "cal.spl ~ 1  + (Treatment|ID) + (Treatment|songtype)", "cal.spl ~ Treatment  + (Treatment|ID) + (Treatment|songtype)")
+
+coord_mods <- pblapply(coord_formulas, function(x){
+  
+lmer(as.formula(x), data = rm_outlier_amp[rm_outlier_amp$Treatment %in% c("Coordination", "Regular_sining") & rm_outlier_amp$ID %in% unique(rm_outlier_amp$ID[rm_outlier_amp$Treatment == "Coordination"]), ], REML = FALSE)
+})
+
+names(coord_mods) <- gsub("cal.spl ~ ", "", coord_formulas)
+
+saveRDS(list(coord_formulas = coord_formulas, coord_mods = coord_mods), "./output/lme4_coordination_models.RDS")
+
+```
+
+## Model selection
+```{r  ampltiude vs coordination model selection, eval = TRUE}
+
+attach(readRDS("./output/lme4_coordination_models.RDS"))
+
+names(coord_mods) <- gsub("cal.spl ~ ", "", coord_formulas)
+
+model_selection <- model.sel(coord_mods, rank="DIC")
+
+model_selection
+```
+
+## Best model summary
+```{r ampltiude vs coordination effect size, eval = TRUE}
+
+# fixed effects with HPD intervals
+best_mod_coord <- coord_mods[[which(names(coord_mods) == row.names(model_selection)[1])]]
+
+# coef(best_mod_coord)
+
+sm_coord <- data.frame(fixef(best_mod_coord), confint(best_mod_coord, parm = c("(Intercept)", "TreatmentRegular_sining"), method = "Wald"))
+
+sm_coord
+
+```
+
+```{r ampltiude vs coord plot, fig.height=10, fig.width=16}
+
+agg_coord <- aggregate(cal.spl ~ Treatment + ID, data =rm_outlier_amp[rm_outlier_amp$Treatment %in% c("Coordination", "Regular_sining") & rm_outlier_amp$ID %in% unique(rm_outlier_amp$ID[rm_outlier_amp$Treatment == "Coordination"]), ], mean)
+
+agg_coord$sd <- aggregate(cal.spl ~ Treatment + ID, data =rm_outlier_amp[rm_outlier_amp$Treatment %in% c("Coordination", "Regular_sining") & rm_outlier_amp$ID %in% unique(rm_outlier_amp$ID[rm_outlier_amp$Treatment == "Coordination"]), ], sd)$cal.spl
+
+agg_coord$Treatment <- factor(ifelse(agg_coord$Treatment == "Coordination", "Coordinated", "Solo"), levels = c("Solo", "Coordinated"))
+
+ggplot(agg_coord, aes(x = Treatment, y = cal.spl, color = Treatment)) +
+  geom_point(size = 2, show.legend = FALSE) +
+   geom_errorbar(width=.05, aes(ymin = cal.spl - sd, ymax = cal.spl + sd), show.legend = FALSE) +
+ 
+  labs(x = "coord treatment", y = "Sound pressure level (dB)", color = "Period") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 1) +
+  facet_wrap(~ ID, nrow = 2, scales = "free_y") +
+  theme_classic(base_size = 24)
+
+```
+
+
+# Amplitude vs aggresive interaction
+
+```{r ampltiude vs chase models, eval = FALSE}
+
+# subset data
+dat_chase <- rm_outlier_amp[rm_outlier_amp$org.sound.file %in% rm_outlier_amp$org.sound.file[rm_outlier_amp$Treatment == "After_chase"], ]
+
+dat_chase <- dat_chase[dat_chase$Treatment %in% c("After_chase", "Regular_sining"), ]
+
+# model amplitude by body size
+chase_formulas <- c("cal.spl ~ 1", "cal.spl ~ Treatment")
+
+chase_mods <- pblapply(chase_formulas, function(x){
+  
+  replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID + songtype, data = dat_chase, verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
+  
+})
+
+names(chase_mods) <- gsub("cal.spl ~ ", "", chase_formulas)
+
+saveRDS(list(chase_formulas = chase_formulas, chase_mods = chase_mods), "./output/mcmcglmm_chase_models.RDS")
+
+```
+
+## Model selection
+```{r ampltiude vs chase model selection, eval = TRUE}
+
+attach(readRDS("./output/mcmcglmm_chase_models.RDS"))
+
+mod_list <- lapply(chase_mods, "[[", 1)
+
+names(mod_list) <- gsub("cal.spl ~ ", "", chase_formulas)
+
+model_selection <- model.sel(mod_list, rank="DIC")
+
+model_selection
+
+```
+
+## Best model summary
+```{r ampltiude vs chase effect size, eval = TRUE}
+
+# fixed effects with HPD intervals
+best_mod_chase <- chase_mods[[which(names(chase_mods) == row.names(model_selection)[1])]][[1]]
+
+sm_chase <- as.data.frame(summary(best_mod_chase)$solutions[, -5])
+
+sm_chase
+```
+
+```{r ampltiude vs chase plot, fig.height=10, fig.width=16}
+
+# subset data
+dat_chase <- rm_outlier_amp[rm_outlier_amp$org.sound.file %in% rm_outlier_amp$org.sound.file[rm_outlier_amp$Treatment == "After_chase"], ]
+
+dat_chase <- dat_chase[dat_chase$Treatment %in% c("After_chase", "Regular_sining"), ]
+
+dat_chase$Treatment <- factor(ifelse(dat_chase$Treatment == "After_chase", "Interaction", "Regular singing"), levels = c("Regular singing", "Interaction"))
+
+
+agg_chase <- aggregate(cal.spl ~ ID + Treatment, data = dat_chase, mean)
+
+agg_chase$ID <- as.character(agg_chase$ID)
+
+
+  
+ggplot(agg_chase, aes(x = Treatment, y = cal.spl)) +
+  geom_violin(data = dat_chase) + 
+  geom_point(size = 2) +
+  geom_line(aes(group = ID)) +
+  labs(x = "Context", y = "Sound pressure level (dB)") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
+  theme_classic(base_size = 24) 
+
+```
+
+
+# Next steps
+
+- run all models with and without interaction with period (?)
+- model amplitude vs uplifting
+- check model convergence
+- check if magnitude of response to treatments in significant models is explained by body size of lifting power
+- evaluate effect of changing song amplitude on song structure (gaps and cross-correlation)
+- measure amplitude on calibration sound
+
+## Session information
+```{r}
+
+sessionInfo()
+
+```
+
