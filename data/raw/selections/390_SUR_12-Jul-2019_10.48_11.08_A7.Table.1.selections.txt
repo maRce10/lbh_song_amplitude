@@ -1,0 +1,5 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	1108.541226302	1119.168342908	0.0	24000.0	390_SUR_12-Jul-2019_10.48_11.08_A7.wav	D:\Audiomoth_recordings\sound_files\390_SUR_12-Jul-2019_10.48_11.08_A7.wav	1108.541	AIN	No
+1	Spectrogram 1	1	1108.541226302	1119.168342908	0.0	24000.0	390_SUR_12-Jul-2019_10.48_11.08_A7.wav	D:\Audiomoth_recordings\sound_files\390_SUR_12-Jul-2019_10.48_11.08_A7.wav	1108.541	AIN	No
+2	Waveform 1	1	1048.573924809	1073.985443670	0.0	24000.0	390_SUR_12-Jul-2019_10.48_11.08_A7.wav	D:\Audiomoth_recordings\sound_files\390_SUR_12-Jul-2019_10.48_11.08_A7.wav	1048.574	BIN	No
+2	Spectrogram 1	1	1048.573924809	1073.985443670	0.0	24000.0	390_SUR_12-Jul-2019_10.48_11.08_A7.wav	D:\Audiomoth_recordings\sound_files\390_SUR_12-Jul-2019_10.48_11.08_A7.wav	1048.574	BIN	No

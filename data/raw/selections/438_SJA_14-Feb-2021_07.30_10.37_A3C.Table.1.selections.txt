@@ -1,0 +1,7 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	75.633810291	105.220267818	0.0	24000.0	438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	D:\Audiomoth_recordings\sound_files_2021\438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	75.634	Calibration	Yes
+1	Spectrogram 1	1	75.633810291	105.220267818	0.0	24000.0	438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	D:\Audiomoth_recordings\sound_files_2021\438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	75.634	Calibration	Yes
+3	Waveform 1	1	4141.378262768	4261.842454989	0.0	24000.0	438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	D:\Audiomoth_recordings\sound_files_2021\438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	4141.378	Normal	Yes
+3	Spectrogram 1	1	4141.378262768	4261.842454989	0.0	24000.0	438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	D:\Audiomoth_recordings\sound_files_2021\438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	4141.378	Normal	Yes
+4	Waveform 1	1	2575.911126928	2584.299412937	0.0	24000.0	438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	D:\Audiomoth_recordings\sound_files_2021\438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	2575.911	Normal	Yes
+4	Spectrogram 1	1	2575.911126928	2584.299412937	0.0	24000.0	438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	D:\Audiomoth_recordings\sound_files_2021\438_SJA_14-Feb-2021_07.30_10.37_A3C.WAV	2575.911	Normal	Yes

@@ -1,0 +1,5 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin Path	Begin File	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	960.061968931	1021.866339191	2264.200	11622.600	/home/m/Dropbox/Recordings/LBH/384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	960.0620	BPB	No
+1	Spectrogram 1	1	960.061968931	1021.866339191	2264.200	11622.600	/home/m/Dropbox/Recordings/LBH/384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	960.0620	BPB	No
+2	Waveform 1	1	1048.350725456	1191.114655154	2264.200	13283.000	/home/m/Dropbox/Recordings/LBH/384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	1048.3507	APB	No
+2	Spectrogram 1	1	1048.350725456	1191.114655154	2264.200	13283.000	/home/m/Dropbox/Recordings/LBH/384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	384_SUR_16-Jul-2019_08.50_09.10_AEZ.wav	1048.3507	APB	No

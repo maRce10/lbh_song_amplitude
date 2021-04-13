@@ -1,0 +1,7 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	48.523622746	70.168396465	0.0	24000.0	422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	D:\Audiomoth_recordings\sound_files_2021\422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	48.524	Calibration	No
+1	Spectrogram 1	1	48.523622746	70.168396465	0.0	24000.0	422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	D:\Audiomoth_recordings\sound_files_2021\422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	48.524	Calibration	No
+2	Waveform 1	1	2884.448005792	2961.765034855	0.0	24000.0	422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	D:\Audiomoth_recordings\sound_files_2021\422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	2884.448	BPB	No
+2	Spectrogram 1	1	2884.448005792	2961.765034855	0.0	24000.0	422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	D:\Audiomoth_recordings\sound_files_2021\422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	2884.448	BPB	No
+3	Waveform 1	1	2963.512594440	3160.412629417	0.0	24000.0	422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	D:\Audiomoth_recordings\sound_files_2021\422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	2963.513	APB	No
+3	Spectrogram 1	1	2963.512594440	3160.412629417	0.0	24000.0	422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	D:\Audiomoth_recordings\sound_files_2021\422_SUR_12-Feb-2021_15.16_16.15_AED.WAV	2963.513	APB	No

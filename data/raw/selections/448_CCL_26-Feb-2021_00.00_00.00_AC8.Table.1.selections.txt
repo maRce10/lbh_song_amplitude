@@ -1,0 +1,11 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	1455.647634560	1482.087744237	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	1455.648	Calibration	No
+1	Spectrogram 1	1	1455.647634560	1482.087744237	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	1455.648	Calibration	No
+2	Waveform 1	1	291.979213334	340.068894196	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	291.979	Coordination	No
+2	Spectrogram 1	1	291.979213334	340.068894196	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	291.979	Coordination	No
+3	Waveform 1	1	340.191033199	347.464076457	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	340.191	Normal	No
+3	Spectrogram 1	1	340.191033199	347.464076457	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	340.191	Normal	No
+4	Waveform 1	1	348.709507016	566.543323275	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	348.710	Coordination	No
+4	Spectrogram 1	1	348.709507016	566.543323275	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	348.710	Coordination	No
+5	Waveform 1	1	641.780478750	726.338433137	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	641.780	Coordination	No
+5	Spectrogram 1	1	641.780478750	726.338433137	0.0	24000.0	448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\448_CCL_26-Feb-2021_00.00_00.00_AC8.WAV	641.780	Coordination	No

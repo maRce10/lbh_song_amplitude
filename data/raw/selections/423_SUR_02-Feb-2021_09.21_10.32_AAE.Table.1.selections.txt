@@ -1,0 +1,5 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation	Ind Color
+1	Spectrogram 1	1	28.651549820	46.762196343	0.000	24000.000	423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	/media/m/Campylopterus/lbh_amplitude/Audiomoth_recordings/sound_files_2021/423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	28.6515	Calibration	No	
+2	Spectrogram 1	1	47.373061792	60.092799059	0.000	24000.000	423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	/media/m/Campylopterus/lbh_amplitude/Audiomoth_recordings/sound_files_2021/423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	47.3731	Calibration	No	
+3	Spectrogram 1	1	669.234555743	671.815326773	0.000	24000.000	423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	/media/m/Campylopterus/lbh_amplitude/Audiomoth_recordings/sound_files_2021/423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	669.2346	Normal	No	RGR
+5	Spectrogram 1	1	1096.690441452	1205.089066007	0.000	24000.000	423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	/media/m/Campylopterus/lbh_amplitude/Audiomoth_recordings/sound_files_2021/423_SUR_02-Feb-2021_09.21_10.32_AAE.WAV	1096.6904	Normal	No	RGR

@@ -1,0 +1,3 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation	Ind Color
+2	Spectrogram 1	1	2341.561757571	2344.033180038	0.000	24000.000	397_SUR_02-Feb-2021_08.33_10.32_AC8.WAV	/media/m/Campylopterus/lbh_amplitude/Audiomoth_recordings/sound_files_2021/397_SUR_02-Feb-2021_08.33_10.32_AC8.WAV	2341.5618	Interaction	No	YPB
+3	Spectrogram 1	1	58.231122084	93.726865837	0.000	24000.000	397_SUR_02-Feb-2021_08.33_10.32_AC8.WAV	/media/m/Campylopterus/lbh_amplitude/Audiomoth_recordings/sound_files_2021/397_SUR_02-Feb-2021_08.33_10.32_AC8.WAV	58.2311	Calibration	No	

@@ -1,0 +1,5 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin Path	Begin File	File Offset (s)	Treatment	Saturation
+4	Waveform 1	1	412.646179205	456.259390465	0.0	24000.0	D:\Audiomoth_recordings\sound_files\395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	412.646	APB	No
+4	Spectrogram 1	1	412.646179205	456.259390465	0.0	24000.0	D:\Audiomoth_recordings\sound_files\395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	412.646	APB	No
+5	Waveform 1	1	319.594079187	412.343033749	0.0	24000.0	D:\Audiomoth_recordings\sound_files\395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	319.594	BPB	No
+5	Spectrogram 1	1	319.594079187	412.343033749	0.0	24000.0	D:\Audiomoth_recordings\sound_files\395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	395_SUR_26-Jul-2019_08.46_09.06_AEZ.wav	319.594	BPB	No

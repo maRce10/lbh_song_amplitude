@@ -1,0 +1,5 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	30.554531650	53.150394200	0.0	24000.0	413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	D:\Audiomoth_recordings\413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	30.555	Calibration	No
+1	Spectrogram 1	1	30.554531650	53.150394200	0.0	24000.0	413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	D:\Audiomoth_recordings\413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	30.555	Calibration	No
+2	Waveform 1	1	2170.644495743	2247.682264625	0.0	24000.0	413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	D:\Audiomoth_recordings\413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	2170.644	Normal	No
+2	Spectrogram 1	1	2170.644495743	2247.682264625	0.0	24000.0	413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	D:\Audiomoth_recordings\413_SUR_24-Feb-2021_14.39_16.30_A1A.WAV	2170.644	Normal	No

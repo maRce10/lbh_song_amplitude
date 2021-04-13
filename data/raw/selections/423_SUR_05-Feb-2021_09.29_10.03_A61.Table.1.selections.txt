@@ -1,0 +1,11 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	87.188883264	106.960262995	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	87.189	Calibration	No
+1	Spectrogram 1	1	87.188883264	106.960262995	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	87.189	Calibration	No
+2	Waveform 1	1	386.354999308	421.276757817	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	386.355	Normal	No
+2	Spectrogram 1	1	386.354999308	421.276757817	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	386.355	Normal	No
+3	Waveform 1	1	424.849368007	461.930617789	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	424.849	Coordination	No
+3	Spectrogram 1	1	424.849368007	461.930617789	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	424.849	Coordination	No
+4	Waveform 1	1	477.541115739	483.291550349	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	477.541	Coordination	No
+4	Spectrogram 1	1	477.541115739	483.291550349	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	477.541	Coordination	No
+5	Waveform 1	1	462.384638488	476.560011634	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	462.385	Normal	No
+5	Spectrogram 1	1	462.384638488	476.560011634	0.0	24000.0	423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	D:\Audiomoth_recordings\sound_files_2021\423_SUR_05-Feb-2021_09.29_10.03_A61.WAV	462.385	Normal	No

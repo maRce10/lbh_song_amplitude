@@ -1,0 +1,9 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	4928.576563987	5113.778551353	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	4928.577	Coordination	No
+1	Spectrogram 1	1	4928.576563987	5113.778551353	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	4928.577	Coordination	No
+2	Waveform 1	1	5167.714853753	5183.892262484	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	5167.715	Calibration	No
+2	Spectrogram 1	1	5167.714853753	5183.892262484	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	5167.715	Calibration	No
+3	Waveform 1	1	4922.000813398	4928.338246722	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	4922.001	Normal	No
+3	Spectrogram 1	1	4922.000813398	4928.338246722	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	4922.001	Normal	No
+4	Waveform 1	1	4879.885273189	4892.430254497	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	4879.885	Normal	No
+4	Spectrogram 1	1	4879.885273189	4892.430254497	0.0	24000.0	444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\444_CCL_27_Feb-2021_08.05_08.32_AC8.WAV	4879.885	Normal	No

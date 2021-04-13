@@ -1,0 +1,3 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin Path	Begin File	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	4.328516785	193.221965804	0.0	24000.0	D:\Audiomoth_recordings\sound_files\413_SUR_27-Jul-2019_14.53_15.13_A45.wav	413_SUR_27-Jul-2019_14.53_15.13_A45.wav	4.329	APB	No
+1	Spectrogram 1	1	4.328516785	193.221965804	0.0	24000.0	D:\Audiomoth_recordings\sound_files\413_SUR_27-Jul-2019_14.53_15.13_A45.wav	413_SUR_27-Jul-2019_14.53_15.13_A45.wav	4.329	APB	No

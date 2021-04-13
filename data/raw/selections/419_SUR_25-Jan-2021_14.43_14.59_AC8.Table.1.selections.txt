@@ -1,0 +1,3 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	391.953841181	648.629924691	0.0	24000.0	419_SUR_25-Jan-2021_14.43_14.59_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\419_SUR_25-Jan-2021_14.43_14.59_AC8.WAV	391.954	Normal	No
+1	Spectrogram 1	1	391.953841181	648.629924691	0.0	24000.0	419_SUR_25-Jan-2021_14.43_14.59_AC8.WAV	D:\Audiomoth_recordings\sound_files_2021\419_SUR_25-Jan-2021_14.43_14.59_AC8.WAV	391.954	Normal	No

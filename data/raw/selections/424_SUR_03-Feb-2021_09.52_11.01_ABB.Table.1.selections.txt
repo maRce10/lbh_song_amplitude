@@ -1,0 +1,9 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin File	Begin Path	File Offset (s)	Treatment	Saturation
+1	Waveform 1	1	42.697535547	68.266182252	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	42.698	Calibration	No
+1	Spectrogram 1	1	42.697535547	68.266182252	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	42.698	Calibration	No
+2	Waveform 1	1	1097.313700694	1193.960564307	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	1097.314	Normal	No
+2	Spectrogram 1	1	1097.313700694	1193.960564307	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	1097.314	Normal	No
+3	Waveform 1	1	1269.363304822	1273.658720983	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	1269.363	Interaction	No
+3	Spectrogram 1	1	1269.363304822	1273.658720983	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	1269.363	Interaction	No
+4	Waveform 1	1	2243.683710661	2286.892685090	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	2243.684	Interaction	No
+4	Spectrogram 1	1	2243.683710661	2286.892685090	0.0	24000.0	424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	D:\Audiomoth_recordings\sound_files_2021\424_SUR_03-Feb-2021_09.52_11.01_ABB.WAV	2243.684	Interaction	No
