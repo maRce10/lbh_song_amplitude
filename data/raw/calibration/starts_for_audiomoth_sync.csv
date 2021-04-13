@@ -1,0 +1,16 @@
+"test.files","selec","start","end","template","time","score"
+"calibration_LM_A1A.WAV",1,11.1680219574107,12.1655219574107,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",11.6667719574107,0.501074151174187
+"calibration_LM_A3C.WAV",1,6.82561900300918,7.82311900300918,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",7.32436900300918,0.535271430962261
+"calibration_LM_A41A.WAV",1,9.94563433931402,10.943134339314,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",10.444384339314,0.477549404571139
+"calibration_LM_A56.WAV",1,7.66402779445191,8.66152779445191,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",8.16277779445191,0.524803502126253
+"calibration_LM_A61.WAV",1,6.33282296668908,7.33032296668908,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",6.83157296668908,0.53320993803273
+"calibration_LM_AAE.WAV",1,9.10403511528465,10.1015351152846,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",9.60278511528465,0.545782672209753
+"calibration_LM_ABB.WAV",1,6.22721625052881,7.22471625052881,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",6.72596625052881,0.540675978371081
+"calibration_LM_AC8.WAV",1,4.7712095102237,5.7687095102237,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",5.2699595102237,0.490935452966435
+"calibration_LM_AED.WAV",1,5.21921360897148,6.21671360897148,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",5.71796360897148,0.503662638150011
+"calibration_M_A1A.WAV",1,12.0064463102102,13.0039463102102,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",12.5051963102102,0.454419092765059
+"calibration_M_A3C.WAV",1,6.84162675329084,7.83912675329084,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",7.34037675329084,0.534946012256513
+"calibration_M_A41A.WAV",1,9.4880188946162,10.4855188946162,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",9.9867688946162,0.483381110951497
+"calibration_M_A61.WAV",1,7.07522064813314,8.07272064813314,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",7.57397064813314,0.529517262281567
+"calibration_M_AAE.WAV",1,9.36961760605025,10.3671176060502,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",9.86836760605025,0.480067540455613
+"calibration_M_AC8.WAV",1,7.7472285842435,8.7447285842435,"calibration_sound_for_audiomoths_and_soundmeter.wav-1",8.2459785842435,0.561605778367468
