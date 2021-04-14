@@ -1,0 +1,23 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin Path	Begin File	Treatment
+1	Waveform 1	1	0.462998681	0.575240785	2117.6	11294.1	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+1	Spectrogram 1	1	0.462998681	0.575240785	2117.6	11294.1	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+2	Waveform 1	1	0.876891441	1.020701637	2117.6	11470.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+2	Spectrogram 1	1	0.876891441	1.020701637	2117.6	11470.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+3	Waveform 1	1	1.529298673	1.631018080	2294.1	12000.0	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+3	Spectrogram 1	1	1.529298673	1.631018080	2294.1	12000.0	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+4	Waveform 1	1	1.967744393	2.072971366	2470.6	11117.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+4	Spectrogram 1	1	1.967744393	2.072971366	2470.6	11117.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	Before_interaction
+5	Waveform 1	1	18.039410690	18.144637663	2294.1	12529.4	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+5	Spectrogram 1	1	18.039410690	18.144637663	2294.1	12529.4	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+6	Waveform 1	1	18.439273187	18.544500160	2117.6	11470.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+6	Spectrogram 1	1	18.439273187	18.544500160	2117.6	11470.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+7	Waveform 1	1	18.846150815	18.944362657	2823.5	13941.2	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+7	Spectrogram 1	1	18.846150815	18.944362657	2823.5	13941.2	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+8	Waveform 1	1	19.249520878	19.358255417	2647.1	13411.8	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+8	Spectrogram 1	1	19.249520878	19.358255417	2647.1	13411.8	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+9	Waveform 1	1	19.666921204	19.779163308	2823.5	15882.4	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+9	Spectrogram 1	1	19.666921204	19.779163308	2823.5	15882.4	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+10	Waveform 1	1	20.119397187	20.228131726	2647.1	13764.7	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+10	Spectrogram 1	1	20.119397187	20.228131726	2647.1	13764.7	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+11	Waveform 1	1	20.498214290	20.620979092	2647.1	14117.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction
+11	Spectrogram 1	1	20.498214290	20.620979092	2647.1	14117.6	D:\LBH_display_videos\B&A_interactions\9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	9.SUR.2013.2.13.07.36.(1)-C6_audio.mp3	After_interaction

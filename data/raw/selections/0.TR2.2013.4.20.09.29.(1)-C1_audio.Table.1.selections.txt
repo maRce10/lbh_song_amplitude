@@ -1,0 +1,25 @@
+Selection	View	Channel	Begin Time (s)	End Time (s)	Low Freq (Hz)	High Freq (Hz)	Begin Path	Begin File	Treatment
+1	Waveform 1	1	0.282513020	0.457402032	3618.7	9483.5	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+1	Spectrogram 1	1	0.282513020	0.457402032	3618.7	9483.5	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+2	Waveform 1	1	0.968616067	1.107630410	3369.2	9608.3	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+2	Spectrogram 1	1	0.968616067	1.107630410	3369.2	9608.3	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+3	Waveform 1	1	1.798217791	1.937232134	3119.6	8984.4	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+3	Spectrogram 1	1	1.798217791	1.937232134	3119.6	8984.4	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+4	Waveform 1	1	2.488805172	2.627819515	3119.6	9483.5	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+4	Spectrogram 1	1	2.488805172	2.627819515	3119.6	9483.5	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+5	Waveform 1	1	5.067297020	5.192858362	3119.6	9358.8	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+5	Spectrogram 1	1	5.067297020	5.192858362	3119.6	9358.8	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	Before_interaction
+6	Waveform 1	1	50.359066821	50.484628163	2870.0	9109.2	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+6	Spectrogram 1	1	50.359066821	50.484628163	2870.0	9109.2	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+7	Waveform 1	1	50.820953186	50.942030195	3493.9	8610.1	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+7	Spectrogram 1	1	50.820953186	50.942030195	3493.9	8610.1	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+8	Waveform 1	1	51.323198554	51.453244230	3493.9	8984.4	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+8	Spectrogram 1	1	51.323198554	51.453244230	3493.9	8984.4	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+9	Waveform 1	1	51.825443923	51.959973932	3493.9	8485.3	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+9	Spectrogram 1	1	51.825443923	51.959973932	3493.9	8485.3	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+10	Waveform 1	1	52.314236290	52.457734966	3743.5	8610.1	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+10	Spectrogram 1	1	52.314236290	52.457734966	3743.5	8610.1	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+11	Waveform 1	1	52.838903326	52.982402003	3618.7	9358.8	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+11	Spectrogram 1	1	52.838903326	52.982402003	3618.7	9358.8	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+12	Waveform 1	1	53.291821024	53.426351033	3993.1	8734.8	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
+12	Spectrogram 1	1	53.291821024	53.426351033	3993.1	8734.8	D:\LBH_display_videos\B&A_interactions\0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	0.TR2.2013.4.20.09.29.(1)-C1_audio.mp3	After_interaction
