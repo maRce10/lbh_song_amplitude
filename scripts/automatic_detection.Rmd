@@ -78,7 +78,7 @@ knitr::opts_chunk$set(dpi = 50, fig.width = 12, message = FALSE, warning = FALSE
 # ggplot2 theme
 # theme_set(theme_classic(base_size = 20))
 
-cut_path <-  "./data/processed/recording_cuts"
+cut_path <-  "./data/raw/cuts"
 
 treatments <- c("Calibration", "Regular_sining", "Coordination", "After_chase",  
  "Before_playback", "After_playback", "Before_interaction", "After_interaction", "Before_noise", "After_noise")
@@ -91,38 +91,41 @@ warbleR_options(wav.path = cut_path, parallel = 20)
 
 sel_tabs <- imp_raven(path = "./data/raw/selections", warbler.format = TRUE, all.data = TRUE)
 
-
 sf <- strsplit(sel_tabs$sound.files, "\\", fixed = TRUE)
 
 sel_tabs$sound.files <- sapply(sf, function(x) x[length(x)])
 
 warbleR_options(wl = 300, wav.path = "~/Dropbox/Recordings/LBH/", parallel = 10, flim = c(0, 11))
 
-cs <- check_sels(sel_tabs, pb = FALSE)
+sel_tabs_wavs <- sel_tabs[grep("wav$", sel_tabs$sound.files, ignore.case = TRUE), ]
 
-sel_tabs$Treatment[grep("Coord", sel_tabs$Treatment)] <- "Coordination"
-sel_tabs$Treatment[grep("BIN", sel_tabs$Treatment)] <- "Before_interaction"
-sel_tabs$Treatment[grep("AIN", sel_tabs$Treatment)] <- "After_interaction"
-sel_tabs$Treatment[grep("BN", sel_tabs$Treatment)] <- "Before_noise"
-sel_tabs$Treatment[grep("AN", sel_tabs$Treatment)] <- "After_noise"
-sel_tabs$Treatment[grep("Interaction", sel_tabs$Treatment)] <- "After_chase"
-sel_tabs$Treatment[grep("BPB", sel_tabs$Treatment)] <- "Before_playback"
-sel_tabs$Treatment[grep("APB", sel_tabs$Treatment)] <- "After_playback"
-sel_tabs$Treatment[grep("Normal", sel_tabs$Treatment)] <- "Regular_sining"
+cs <- check_sels(sel_tabs_wavs, pb = FALSE)
 
-sel_tabs$`Ind Color` <- NULL
+sel_tabs_wavs$Treatment[grep("Coord", sel_tabs_wavs$Treatment)] <- "Coordination"
+sel_tabs_wavs$Treatment[grep("BIN", sel_tabs_wavs$Treatment)] <- "Before_interaction"
+sel_tabs_wavs$Treatment[grep("AIN", sel_tabs_wavs$Treatment)] <- "After_interaction"
+sel_tabs_wavs$Treatment[grep("BN", sel_tabs_wavs$Treatment)] <- "Before_noise"
+sel_tabs_wavs$Treatment[grep("AN", sel_tabs_wavs$Treatment)] <- "After_noise"
+sel_tabs_wavs$Treatment[grep("Interaction", sel_tabs_wavs$Treatment)] <- "After_chase"
+sel_tabs_wavs$Treatment[grep("BPB", sel_tabs_wavs$Treatment)] <- "Before_playback"
+sel_tabs_wavs$Treatment[grep("APB", sel_tabs_wavs$Treatment)] <- "After_playback"
+sel_tabs_wavs$Treatment[grep("Normal", sel_tabs_wavs$Treatment)] <- "Regular_sining"
 
-sel_tabs$ID <- substr(sel_tabs$selec.file, 0 , 3)
-sel_tabs$year <- ifelse(grepl("2021", sel_tabs$sound.files), 2021, 2019)
+sel_tabs_wavs$`Ind Color` <- NULL
+
+sel_tabs_wavs$ID <- substr(sel_tabs_wavs$selec.file, 0 , 3)
+sel_tabs_wavs$year <- ifelse(grepl("2021", sel_tabs_wavs$sound.files), 2021, 2019)
 
 ```
 
-# Automatic detection of LBH songs
+# Automatic detection of LBH songs on wav files
 ```{r autodetection, eval = FALSE}
 
-song_sels <- sel_tabs[sel_tabs$Treatment != "Calibration", ]
+song_sels <- sel_tabs_wavs[sel_tabs_wavs$Treatment != "Calibration", ]
 
 cut_sels(song_sels, dest.path = cut_path, overwrite = FALSE)
+
+
 
 ad <- auto_detec(threshold = 15, bp = c(1, 9), ssmooth = 300, hold.time = 0.1, output = "data.frame", path = cut_path, thinning = 0.05) 
 
