@@ -18,7 +18,7 @@ Melanie Talavera</a></font>
 
 Measuring amplitude and its underlying anatomical and social covariates
 
-*Updated on 2021-04-19 00:15:36*
+*Updated on 2021-04-19 14:45:47*
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -39,7 +39,7 @@ hermit hummingbirds
   - [Audiomoth
     calibration](https://rpubs.com/marcelo-araya-salas/755524)
   - [Automatic detection](https://rpubs.com/marcelo-araya-salas/755667)
-  - [Stats](https://rpubs.com/marcelo-araya-salas/756976)
+  - [Statistical analysis](https://rpubs.com/marcelo-araya-salas/757288)
 
 ## In progress
 

@@ -39,7 +39,7 @@ Data analysis for study on song amplitude in free-ranging long-billed hermit hum
 
 * [Audiomoth calibration](https://rpubs.com/marcelo-araya-salas/755524)
 * [Automatic detection](https://rpubs.com/marcelo-araya-salas/755667)
-* [Stats](https://rpubs.com/marcelo-araya-salas/756976)
+* [Statistical analysis](https://rpubs.com/marcelo-araya-salas/757288)
 
 ## In progress
 
