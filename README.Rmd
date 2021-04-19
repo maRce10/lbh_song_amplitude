@@ -37,24 +37,15 @@ Data analysis for study on song amplitude in free-ranging long-billed hermit hum
 
 ## Analysis
 
-* [Audiomoth calibration](https://rpubs.com/marcelo-araya-salas/745581)
-* [Automatic detection]
+* [Audiomoth calibration](https://rpubs.com/marcelo-araya-salas/755524)
+* [Automatic detection](https://rpubs.com/marcelo-araya-salas/755667)
+* [Stats](https://rpubs.com/marcelo-araya-salas/756976)
 
 ## In progress
 
-*  Automatic detection
+Writing paper
 
 ## To-do list
-
-* Find example video clips for differet interaction types (flight by, coordination, etc)
-
-* Stats:
-  - run all models with and without interaction with period
-  - run a model only for period
-  - include song type as random factor
-  - model amplitude vs uplifting
-  - check model convergence
-  - check if magnitude of response  to treatments in significant models is explained by body size of lifting power
 
 ## Status
 Project is: _in progress_

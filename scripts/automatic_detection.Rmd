@@ -40,7 +40,7 @@ detec_saturation <- function(X, parallel = 1, bit = 16, max_amplitude = NULL, pa
   
   out <- pblapply(1:nrow(X), cl = parallel, function(x){
     
-    wv <- read_wave(X, index = x, path = path)
+    wv <- read_sound_file(X, index = x, path = path)
   
     out_df <- data.frame(sound.files = X$sound.files[x], selec = X$selec[x], prop.saturated = sum(wv@left == max_amplitude) / length(wv@left))
     
@@ -83,11 +83,11 @@ cut_path <-  "./data/raw/cuts"
 treatments <- c("Calibration", "Regular_sining", "Coordination", "After_chase",  
  "Before_playback", "After_playback", "Before_interaction", "After_interaction", "Before_noise", "After_noise")
 
-warbleR_options(wav.path = cut_path, parallel = 20)
-
 ```
 
 ```{r read raven selections, eval = TRUE}
+
+warbleR_options(wav.path = cut_path, parallel = 20)
 
 sel_tabs <- imp_raven(path = "./data/raw/selections", warbler.format = TRUE, all.data = TRUE)
 
@@ -95,47 +95,250 @@ sf <- strsplit(sel_tabs$sound.files, "\\", fixed = TRUE)
 
 sel_tabs$sound.files <- sapply(sf, function(x) x[length(x)])
 
-warbleR_options(wl = 300, wav.path = "~/Dropbox/Recordings/LBH/", parallel = 10, flim = c(0, 11))
+sel_tabs$Treatment[grep("Coord", sel_tabs$Treatment)] <- "Coordination"
+sel_tabs$Treatment[grep("BIN", sel_tabs$Treatment)] <- "Before_interaction"
+sel_tabs$Treatment[grep("AIN", sel_tabs$Treatment)] <- "After_interaction"
+sel_tabs$Treatment[grep("BN", sel_tabs$Treatment)] <- "Before_noise"
+sel_tabs$Treatment[grep("AN", sel_tabs$Treatment)] <- "After_noise"
+sel_tabs$Treatment[grep("Interaction", sel_tabs$Treatment)] <- "After_chase"
+sel_tabs$Treatment[grep("BPB", sel_tabs$Treatment)] <- "Before_playback"
+sel_tabs$Treatment[grep("APB", sel_tabs$Treatment)] <- "After_playback"
+sel_tabs$Treatment[grep("Normal", sel_tabs$Treatment)] <- "Regular_sining"
+
+sel_tabs$`Ind Color` <- NULL
+
+sel_tabs$ID <- substr(sel_tabs$selec.file, 0 , 3)
+
+sel_tabs$ID[grep("mp3$", sel_tabs$sound.files)] <- sapply(grep("mp3$", sel_tabs$sound.files, value = TRUE), function(x) strsplit(x, split = "\\.")[[1]][1])
+
+sel_tabs$year <- ifelse(grepl("2021", sel_tabs$sound.files), 2021, 2019)
+
+sel_tabs$year[grep("mp3$", sel_tabs$sound.files)] <- sapply(grep("mp3$", sel_tabs$sound.files, value = TRUE), function(x) strsplit(x, split = "\\.")[[1]][3])
+
+
+# table(sel_tabs$year, sel_tabs$Treatment)
+
+```
+
+# Automatic detection of LBH songs on flac files
+```{r autodetection, eval = FALSE}
+
+warbleR_options(wl = 300, parallel = 10, flim = c(0, 11))
 
 sel_tabs_wavs <- sel_tabs[grep("wav$", sel_tabs$sound.files, ignore.case = TRUE), ]
 
-cs <- check_sels(sel_tabs_wavs, pb = FALSE)
 
-sel_tabs_wavs$Treatment[grep("Coord", sel_tabs_wavs$Treatment)] <- "Coordination"
-sel_tabs_wavs$Treatment[grep("BIN", sel_tabs_wavs$Treatment)] <- "Before_interaction"
-sel_tabs_wavs$Treatment[grep("AIN", sel_tabs_wavs$Treatment)] <- "After_interaction"
-sel_tabs_wavs$Treatment[grep("BN", sel_tabs_wavs$Treatment)] <- "Before_noise"
-sel_tabs_wavs$Treatment[grep("AN", sel_tabs_wavs$Treatment)] <- "After_noise"
-sel_tabs_wavs$Treatment[grep("Interaction", sel_tabs_wavs$Treatment)] <- "After_chase"
-sel_tabs_wavs$Treatment[grep("BPB", sel_tabs_wavs$Treatment)] <- "Before_playback"
-sel_tabs_wavs$Treatment[grep("APB", sel_tabs_wavs$Treatment)] <- "After_playback"
-sel_tabs_wavs$Treatment[grep("Normal", sel_tabs_wavs$Treatment)] <- "Regular_sining"
-
-sel_tabs_wavs$`Ind Color` <- NULL
-
-sel_tabs_wavs$ID <- substr(sel_tabs_wavs$selec.file, 0 , 3)
-sel_tabs_wavs$year <- ifelse(grepl("2021", sel_tabs_wavs$sound.files), 2021, 2019)
-
-```
-
-# Automatic detection of LBH songs on wav files
-```{r autodetection, eval = FALSE}
+cs <- check_sels(sel_tabs_wavs, pb = FALSE, path = "~/Dropbox/Recordings/LBH/")
 
 song_sels <- sel_tabs_wavs[sel_tabs_wavs$Treatment != "Calibration", ]
 
-cut_sels(song_sels, dest.path = cut_path, overwrite = FALSE)
+cut_sels(song_sels, path = "~/Dropbox/Recordings/LBH/", dest.path = cut_path, overwrite = FALSE)
 
+ 
 
+wav_2_flac(path = cut_path)
 
-ad <- auto_detec(threshold = 15, bp = c(1, 9), ssmooth = 300, hold.time = 0.1, output = "data.frame", path = cut_path, thinning = 0.05) 
+ad <- auto_detec(threshold = 15, bp = c(1, 9), ssmooth = 300, hold.time = 0.1, output = "data.frame", path = cut_path, thinning = 0.05, flist = list.files(path = cut_path, pattern = "flac$")) 
 
-exp_raven(X = ad, path = cut_path, sound.file.path = normalizePath(cut_path), file.name = "song_detection_sel_tabl.txt")
+ad$org.sound.file <- sapply(1:nrow(ad), function(x) song_sels$sound.files[song_sels$cuts == ad$sound.files[x]][1])
 
-full_spectrograms(X = ad, sxrow = 5, rows = 13, fast.spec = TRUE, horizontal = TRUE, path = cut_path)
+exp_raven(X = ad, path = cut_path, sound.file.path = normalizePath(cut_path), file.name = "song_detection_sel_tab_wavs.txt")
 
-move_imgs(from = cut_path, to = "./data/processed/full_spectrograms_autodetec", overwrite = TRUE)
 
 ```
+
+
+```{r export selections of mp3s, eval = FALSE}
+
+sel_tabs_mp3s <- sel_tabs[grep("mp3$", sel_tabs$sound.files, ignore.case = TRUE), ]
+
+sel_tabs_mp3s$org.sound.file <- sel_tabs_mp3s$sound.files
+
+cs <- check_sels(sel_tabs_mp3s, pb = FALSE, path = cut_path)
+
+exp_raven(X = sel_tabs_mp3s, path = cut_path, sound.file.path = normalizePath(cut_path), file.name = "song_detection_sel_tab_mp3s.txt")
+
+```
+
+# Measure amplitude
+
+```{r, eval = FALSE}
+
+sels <- imp_raven(warbler.format = TRUE, all.data = TRUE, path = "./data/raw", pb = FALSE, files = c("song_detection_sel_tab_mp3s.txt","song_detection_sel_tab_wavs.txt"))
+
+pos <- regexpr("\\.([[:alnum:]]+)$",  sel_tabs$sound.files)
+sel_tabs$extsn <- tolower(ifelse(pos > -1L, substring(sel_tabs$sound.files,pos + 1L), ""))
+
+sel_tabs$extsn[extsn == "wav"] <- "flac"
+
+
+sel_tabs$cuts <- paste0(paste(gsub(".WAV", "", sel_tabs$sound.files, ignore.case = TRUE), sel_tabs$selec, sep = "-"), ".", extsn)
+
+sel_tabs$cuts[grep("mp3$",sel_tabs$cuts)] <- sel_tabs$sound.files[grep("mp3$",sel_tabs$cuts)]
+
+names(sel_tabs)[names(sel_tabs) == "Ind Color" ] <- "ID"
+
+
+pos <- regexpr("\\.([[:alnum:]]+)$",  sels$sound.files)
+sels$extsn <- tolower(ifelse(pos > -1L, substring(sels$sound.files,pos + 1L), ""))
+
+sels$sound.files[sels$sound.files == "424_SUR_05-Feb-2021_07.58_09.52_A41.flac"] <- "424_SUR_05-Feb-2021_07.58_09.52_A41A.flac"
+
+sels$year <- ifelse(grepl("2021", sels$sound.files), 2021, 2019)
+
+sels$year[grep("mp3$", sels$sound.files)]  <- as.numeric(sapply(grep("mp3$", sels$sound.files, value = TRUE), function(x) strsplit(x, split = "\\.")[[1]][3]))
+
+sels$Treatment[sels$extsn == "flac"] <- sapply(which(sels$extsn == "flac"), function(x){
+  y <- sel_tabs$Treatment[sel_tabs$cuts == sels$sound.files[x]][1]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$ID <- sapply(1:nrow(sels), function(x){
+  y <- sel_tabs$ID[sel_tabs$cuts == sels$sound.files[x]][1]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+
+# table(sels$year, sels$Treatment)
+
+
+am_set <- as.data.frame(read_excel(path = "./data/raw/audiomoth_recording_settings.xlsx"))
+
+sels$org.sound.file <- gsub(".wav", "", sels$org.sound.file, ignore.case = TRUE)
+
+sels$Audiomoth <- sapply(1:nrow(sels), function(x){
+  y <- am_set$Audiomoth[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$Calibration <- sapply(1:nrow(sels), function(x){
+  y <- am_set$Calibration[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$`Raven selections file` <- sapply(1:nrow(sels), function(x){
+  y <- am_set$`Raven selections file`[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$Gain <- sapply(1:nrow(sels), function(x){
+  y <- am_set$Gain[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+# sels2 <- merge(sels, am_set[, c("Raven selections file", "Audiomoth", "Gain", "Calibration", "Original audio file")], by.x = "org.sound.file", by.y = "Original audio file")
+
+
+sels$duration <- sels$old.selec <- sels$View <- sels$Channel <- sels$`Begin Path` <- sels$`File Offset (s)` <- NULL
+
+sels$cut.label <- 1
+
+
+
+
+sat <- detec_saturation(sels, parallel = 20, bit = 16, path = cut_path)
+
+sels$prop.saturated <- sat$prop.saturated
+
+
+# measure uncalibrated SPL
+sels$uncal.spl <- pbsapply(1:nrow(sels), cl = 20, function(x) {
+
+  signal <- read_sound_file(sels, index = x, path = cut_path)
+  
+   # signal <- ffilter(signal, f = signal@samp.rate, from = bp[1] * 1000, to = bp[2] * 1000, bandpass = TRUE, output = "Wave")
+   
+  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
+  signaldb <- 20 * log10(sigamp)
+  
+    return(signaldb)
+  }
+)
+
+cal <- read.csv("./output/spl_constant_for_audiomoth_calibration.csv")
+
+cal <- cal[cal$sound.files != "soundmeter", ]
+
+cal$Audiomoth <- substr(sapply(cal$sound.files, function(x) strsplit(x, split = "_")[[1]][3]), 2, 3)
+
+sels$Audiomoth[is.na(sels$Audiomoth)] <- "non-calibrated"
+sels$Gain[is.na(sels$Gain)] <- "non-calibrated"
+
+cal$Audiomoth[cal$Audiomoth == "41"] <- "41A"
+
+cal$gain <- sapply(cal$sound.files, function(x) strsplit(x, split = "_")[[1]][2])
+
+
+amp <- read.csv("./output/calibrated_amplitude_all_songs.csv")
+
+
+cal_spl_for_calibrated_l <- pblapply(unique(sels$org.sound.file[sels$Audiomoth != "non-calibrated"]), cl = 10, function(x){
+  X <- sels[sels$org.sound.file == x, ]
+  X$cal.spl <- X$uncal.spl + cal$mean.diff[cal$Audiomoth == X$Audiomoth[1] & cal$gain == X$Gain[1]]
+return(X)
+    }
+)
+
+cal_spl_for_calibrated <- do.call(rbind, cal_spl_for_calibrated_l)
+
+# speudo-calibration for non-calibrated audiomoth recordings forcing them to have a mean SPL equals to the mean SPL of all calibrated songs
+cal.spl_for_non_calibrated_l <- pblapply(unique(sels$org.sound.file[sels$Audiomoth == "non-calibrated"]), cl = 10, function(x){
+  X <- sels[sels$org.sound.file == x, ]
+  
+  X$cal.spl <- X$uncal.spl + mean(cal_spl_for_calibrated$cal.spl) - mean(X$uncal.spl)
+  return(X)
+  }
+)
+
+cal.spl_for_non_calibrated <- do.call(rbind, cal.spl_for_non_calibrated_l)
+
+sels <- rbind(cal.spl_for_non_calibrated, cal_spl_for_calibrated)
+
+# extract hour
+sels$time <- as.numeric(substr(sels$sound.files, 21, 22))
+
+sels$time[grep("mp3$", sels$sound.files)]  <- as.numeric(sapply(grep("mp3$", sels$sound.files, value = TRUE), function(x) strsplit(x, split = "\\.")[[1]][6]))
+
+
+sels$time[sels$org.sound.file == "448_CCL_26-Feb-2021_00.00_00.00_AC8"] <- 8
+
+sels$period <- ifelse(sels$time > 12, "afternoon", "morning")
+
+sels$ID <- substr(sels$sound.files, 0 , 3)
+
+sels$ID[grep("mp3$", sels$sound.files)] <- sapply(grep("mp3$", sels$sound.files, value = TRUE), function(x) strsplit(x, split = "\\.")[[1]][1])
+
+# add lek
+sels$lek <- substr(sels$sound.files, 5, 7)
+
+sels$lek[grep("mp3$", sels$sound.files)] <- sapply(grep("mp3$", sels$sound.files, value = TRUE), function(x) strsplit(x, split = "\\.")[[1]][2])
+
+
+sels$bottom.freq[is.na(sels$bottom.freq)] <- mean(sels$bottom.freq, na.rm = TRUE)
+sels$top.freq[is.na(sels$top.freq)] <- mean(sels$top.freq, na.rm = TRUE)
+
+# add song type
+songtype_df <- read.csv("./output/songtype_classification.csv")
+
+sels$songtype <- sapply(1:nrow(sels), function(x) songtype_df$songtype[songtype_df$ID == sels$ID[x]][1])
+
+sels$duration <- sels$end - sels$start
+sels <- sels[sels$duration > 0.1 & sels$duration < 0.18, ]
+
+
+hist(sels$duration[sels$sound.files == "395_SUR_26-Jul-2019_08.46_09.06_AEZ-5.flac"])
+hist(sels$duration)
+range(sels$duration)
+quantile(sels$duration)
+
+cs <- checksels(sels, path = cut_path)
+
+full_spectrograms(X = sels, sxrow = 5, rows = 13, fast.spec = TRUE, horizontal = TRUE, path = cut_path, parallel = 20, flim = c(1, 14), dest.path =  "./data/processed/full_spectrograms_autodetec", song = "Treatment")
+
+# write.csv(sels, "./output/calibrated_amplitude_all_songs.csv", row.names = FALSE)
+
+```
+
 
 # Descriptive stats
 
@@ -148,12 +351,12 @@ move_imgs(from = cut_path, to = "./data/processed/full_spectrograms_autodetec", 
 # read data
 sels <- read.csv("./output/calibrated_amplitude_all_songs.csv")
 
-sub_sels <- sel_tabs[!duplicated(sel_tabs[, c("ID", "Treatment")]), ]
+sub_sels <- sels[!duplicated(sels[, c("sound.files", "Treatment")]), ]
 
 agg <- aggregate(sound.files ~ Treatment, sub_sels, length)
 
 # order levels
-agg <- agg[match(treatments, agg$Treatment), ]
+agg <- agg[match(treatments[treatments %in% agg$Treatment], agg$Treatment), ]
 
 kable(agg)
 
@@ -163,15 +366,40 @@ kable(agg)
 
 ```{r}
 
+
+
+sub_sels <- sels[!duplicated(sels[, c("ID", "Treatment")]), ]
+
 agg <- aggregate(sound.files ~ Treatment, sub_sels, length)
 
 # order levels
-agg <- agg[match(treatments, agg$Treatment), ]
+agg <- agg[match(treatments[treatments %in% agg$Treatment], agg$Treatment), ]
+
 
 kable(agg)
 
 ```
 
+
+- Individual sample size for each treatment by year (recordings from years before 2019 were extracted from videos in mp3 format):
+
+```{r}
+
+sub_sels <- sels[!duplicated(sels[, c("ID", "year", "Treatment")]), ]
+
+sub_sels$year <- as.factor(sub_sels$year)
+
+agg <- as.data.frame.matrix(table(sub_sels$Treatment, sub_sels$year))
+
+
+# order levels
+agg <- agg[match(treatments[treatments %in% rownames(agg)], rownames(agg)), ]
+
+agg[agg == 0] <- ""
+
+kable(agg)
+
+```
 
 - Total number of songs = `r nrow(sels)`
 
@@ -191,72 +419,52 @@ kable(agg)
 
 - Maximum number of saturated songs = `r max(sels$prop.saturated)`
 
+```{r classify song types, eval = FALSE}
 
-# Measure amplitude
+amp <- read.csv("./output/calibrated_amplitude_all_songs.csv")
 
-```{r, eval = FALSE}
+# options for warbleR
+warbleR_options(wav.path = cut_path, wl = 400)
+check_sels(amp)
 
-sels <- imp_raven(warbler.format = TRUE, all.data = TRUE, files = "song_detection_sel_tabl.txt", path = "./data/processed", pb = FALSE)
-
-# cs <- checksels(sels)
-
-sel_tabs$cuts <- paste0(paste(gsub(".WAV", "", sel_tabs$sound.files, ignore.case = TRUE), sel_tabs$selec, sep = "-"), ".wav")
-
-
-sels$sound.files[sels$sound.files == "424_SUR_05-Feb-2021_07.58_09.52_A41"] <- "424_SUR_05-Feb-2021_07.58_09.52_A41A"
-
-sels <- merge(sels, sel_tabs[!duplicated(sel_tabs$cuts), c("cuts", "Treatment", "ID", "Saturation", "sound.files")], by.x = "sound.files", by.y = "cuts")
-
-names(sels)[names(sels) == "sound.files.y"] <- "org.sound.file"
-
-am_set <- read_excel(path = "./data/raw/audiomoth_recording_settings.xlsx")
-
-am_set$`Original audio file` <- paste0(am_set$`Original audio file`, ".WAV")
-
-sels <- merge(sels, am_set[, c("Raven selections file", "Audiomoth", "Gain", "Calibration", "Original audio file")], by.x = "org.sound.file", by.y = "Original audio file")
+# measure signal to noise ratio
+snr <- sig2noise(amp, 0.1, path = cut_path)
 
 
-sels$duration <- sels$old.selec <- sels$View <- sels$Channel <- sels$`Begin Path` <- sels$`File Offset (s)` <- NULL
-
-sels$cut.label <- 1
-
-sat <- detec_saturation(sels, parallel = 10, bit = 16, path = cut_path)
-
-sels$prop.saturated <- sat$prop.saturated
-
-
-# measure uncalibrated SPL
-sels$uncal.spl <- pbsapply(1:nrow(sels), cl = 20, function(x) {
-
-  signal <- read_wave(sels, index = x, path = cut_path)
+# get the 3 songs with the highest SNR for each individual
+examp_l <- lapply(unique(snr$ID), function(x) {
   
-   # signal <- ffilter(signal, f = signal@samp.rate, from = bp[1] * 1000, to = bp[2] * 1000, bandpass = TRUE, output = "Wave")
-   
-  sigamp <- seewave::rms(seewave::env(signal, envt = "abs", plot = FALSE))
-  signaldb <- 20 * log10(sigamp)
+  X <- snr[snr$ID == x, ]
   
-    return(signaldb)
-  })
+  X <- X[order(X$SNR, decreasing = TRUE), ]
+  
+  return(X[1:3, ])
+})
+
+# make it a data frame
+examp <- do.call(rbind, examp_l)
+
+# add lek label
+examp$lek <- substr(examp$org.sound.file, 5, 7)
+
+examp$lek[grep("mp3$", examp$sound.files)] <- sapply(grep("mp3$", examp$sound.files, value = TRUE), function(x) strsplit(x, split = "\\.")[[1]][2])
+
+examp_est <- selection_table(examp, extended = TRUE, confirm.extended = FALSE)
+
+# make catalog
+catalog(examp_est, flim = c(0, 14), ovlp = 95, nrow = 10, ncol = 6, wl = 400, pal = viridis, collevels = seq(-100, 0, 1), labels = c("ID", "lek"), width = 15.5, height = 8.5, res = 200, tags = c("lek"), tag.pal = list(magma), mar = 0.005, hatching = 2, parallel = 1)
+
+move_imgs(from = cut_path, to = "./data/raw", overwrite = TRUE)
 
 
-cal <- read.csv("./output/spl_constant_for_audiomoth_calibration.csv")
-
-cal <- cal[cal$sound.files != "soundmeter", ]
-
-cal$audiomoth <- substr(sapply(cal$sound.files, function(x) strsplit(x, split = "_")[[1]][3]), 2, 3)
-
-cal$audiomoth[cal$audiomoth == "41"] <- "41A"
-
-cal$gain <- sapply(cal$sound.files, function(x) strsplit(x, split = "_")[[1]][2])
+songtype_df <- data.frame(ID = c(397, 400, 403, 413, 415, 416, 417, 419, 422, 423, 424, 432, 433, 435, 437, 438, 444, 446, 448, 449, 0, 108, 124, 146, 176, 178, 179, 36, 54, 9, 384, 390, 391, 395, 398, 402), songtype = c("a", "b", "f", "c", "f", "c", "c",  "g",  "e", "c", "d", "h", "i", "j", "i", "j", "l", "k", "l", "m", "n", "l", "o", "p", "q", "q", "q", "r", "q", "q", "s", "a", "a", "a", "c", "b"))
 
 
-sels$cal.spl <- pbsapply(1:nrow(sels), cl = 10, function(x)
-  sels$uncal.spl[x] + cal$mean.diff[cal$audiomoth == sels$Audiomoth[x] & cal$gain == sels$Gain[x]]
-)
+write.csv(songtype_df, "./output/songtype_classification.csv", row.names = FALSE)
 
-write.csv(sels, "./output/calibrated_amplitude_all_songs.csv", row.names = FALSE)
 
-```
+``` 
+
 
 
 ## Session information

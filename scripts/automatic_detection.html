@@ -1604,7 +1604,7 @@ div.tocify {
 <font size="4"><a href="http://marceloarayasalas.weebly.com/">Marcelo Araya-Salas, PhD</a> &amp; Melanie Talavera</font>
 </center></h4>
 <h4 class="date"><center>
-26-03-2021
+18-04-2021
 </center></h4>
 
 </div>
@@ -1633,7 +1633,7 @@ detec_saturation &lt;- function(X, parallel = 1, bit = 16, max_amplitude = NULL,
   
   out &lt;- pblapply(1:nrow(X), cl = parallel, function(x){
     
-    wv &lt;- read_wave(X, index = x, path = path)
+    wv &lt;- read_sound_file(X, index = x, path = path)
   
     out_df &lt;- data.frame(sound.files = X$sound.files[x], selec = X$selec[x], prop.saturated = sum(wv@left == max_amplitude) / length(wv@left))
     
@@ -1667,7 +1667,7 @@ knitr::opts_chunk$set(dpi = 50, fig.width = 12, message = FALSE, warning = FALSE
 # ggplot2 theme
 # theme_set(theme_classic(base_size = 20))
 
-cut_path &lt;-  &quot;./data/processed/recording_cuts&quot;
+cut_path &lt;-  &quot;./data/raw/cuts&quot;
 
 treatments &lt;- c(&quot;Calibration&quot;, &quot;Regular_sining&quot;, &quot;Coordination&quot;, &quot;After_chase&quot;,  
  &quot;Before_playback&quot;, &quot;After_playback&quot;, &quot;Before_interaction&quot;, &quot;After_interaction&quot;, &quot;Before_noise&quot;, &quot;After_noise&quot;)</code></pre>
@@ -1675,18 +1675,11 @@ treatments &lt;- c(&quot;Calibration&quot;, &quot;Regular_sining&quot;, &quot;Co
 
 sel_tabs &lt;- imp_raven(path = &quot;./data/raw/selections&quot;, warbler.format = TRUE, all.data = TRUE)
 
-
 sf &lt;- strsplit(sel_tabs$sound.files, &quot;\\&quot;, fixed = TRUE)
 
 sel_tabs$sound.files &lt;- sapply(sf, function(x) x[length(x)])
 
-sel_tabs &lt;- sel_tabs[grep(&quot;2021&quot;, sel_tabs$sound.files), ]
-
-warbleR_options(wl = 300, wav.path = &quot;~/Dropbox/Recordings/LBH/&quot;, parallel = 10, flim = c(0, 11))
-
-cs &lt;- check_sels(sel_tabs, pb = FALSE)</code></pre>
-<pre><code>FALSE all selections are OK</code></pre>
-<pre class="r"><code>sel_tabs$Treatment[grep(&quot;Coord&quot;, sel_tabs$Treatment)] &lt;- &quot;Coordination&quot;
+sel_tabs$Treatment[grep(&quot;Coord&quot;, sel_tabs$Treatment)] &lt;- &quot;Coordination&quot;
 sel_tabs$Treatment[grep(&quot;BIN&quot;, sel_tabs$Treatment)] &lt;- &quot;Before_interaction&quot;
 sel_tabs$Treatment[grep(&quot;AIN&quot;, sel_tabs$Treatment)] &lt;- &quot;After_interaction&quot;
 sel_tabs$Treatment[grep(&quot;BN&quot;, sel_tabs$Treatment)] &lt;- &quot;Before_noise&quot;
@@ -1698,37 +1691,237 @@ sel_tabs$Treatment[grep(&quot;Normal&quot;, sel_tabs$Treatment)] &lt;- &quot;Reg
 
 sel_tabs$`Ind Color` &lt;- NULL
 
-sel_tabs$ID &lt;- substr(sel_tabs$selec.file, 0 , 3)</code></pre>
+sel_tabs$ID &lt;- substr(sel_tabs$selec.file, 0 , 3)
+
+sel_tabs$ID[grep(&quot;mp3$&quot;, sel_tabs$sound.files)] &lt;- sapply(grep(&quot;mp3$&quot;, sel_tabs$sound.files, value = TRUE), function(x) strsplit(x, split = &quot;\\.&quot;)[[1]][1])
+
+sel_tabs$year &lt;- ifelse(grepl(&quot;2021&quot;, sel_tabs$sound.files), 2021, 2019)
+
+sel_tabs$year[grep(&quot;mp3$&quot;, sel_tabs$sound.files)] &lt;- sapply(grep(&quot;mp3$&quot;, sel_tabs$sound.files, value = TRUE), function(x) strsplit(x, split = &quot;\\.&quot;)[[1]][3])
+
+
+# table(sel_tabs$year, sel_tabs$Treatment)</code></pre>
 </div>
-<div id="automatic-detection-of-lbh-songs" class="section level1">
-<h1>Automatic detection of LBH songs</h1>
-<pre class="r"><code>song_sels &lt;- sel_tabs[sel_tabs$Treatment != &quot;Calibration&quot;, ]
+<div id="automatic-detection-of-lbh-songs-on-flac-files" class="section level1">
+<h1>Automatic detection of LBH songs on flac files</h1>
+<pre class="r"><code>warbleR_options(wl = 300, parallel = 10, flim = c(0, 11))
 
-# cut_sels(song_sels, dest.path = cut_path)
+sel_tabs_wavs &lt;- sel_tabs[grep(&quot;wav$&quot;, sel_tabs$sound.files, ignore.case = TRUE), ]
 
-ad &lt;- auto_detec(threshold = 15, bp = c(1, 9), ssmooth = 300, hold.time = 0.1, output = &quot;list&quot;, path = cut_path, thinning = 0.05) 
 
-exp_raven(X = ad, path = cut_path, sound.file.path = normalizePath(cut_path), file.name = &quot;song_detection_sel_tabl.txt&quot;)
+cs &lt;- check_sels(sel_tabs_wavs, pb = FALSE, path = &quot;~/Dropbox/Recordings/LBH/&quot;)
 
-full_spectrograms(X = ad, sxrow = 5, rows = 13, fast.spec = TRUE, horizontal = TRUE, path = &quot;./data/processed/recording_cuts&quot;)
+song_sels &lt;- sel_tabs_wavs[sel_tabs_wavs$Treatment != &quot;Calibration&quot;, ]
 
-move_imgs(from = &quot;./data/processed/recording_cuts&quot;, to = &quot;./data/processed/full_spectrograms_autodetec&quot;, overwrite = TRUE)</code></pre>
+cut_sels(song_sels, path = &quot;~/Dropbox/Recordings/LBH/&quot;, dest.path = cut_path, overwrite = FALSE)
+
+ 
+
+wav_2_flac(path = cut_path)
+
+ad &lt;- auto_detec(threshold = 15, bp = c(1, 9), ssmooth = 300, hold.time = 0.1, output = &quot;data.frame&quot;, path = cut_path, thinning = 0.05, flist = list.files(path = cut_path, pattern = &quot;flac$&quot;)) 
+
+ad$org.sound.file &lt;- sapply(1:nrow(ad), function(x) song_sels$sound.files[song_sels$cuts == ad$sound.files[x]][1])
+
+exp_raven(X = ad, path = cut_path, sound.file.path = normalizePath(cut_path), file.name = &quot;song_detection_sel_tab_wavs.txt&quot;)</code></pre>
+<pre class="r"><code>sel_tabs_mp3s &lt;- sel_tabs[grep(&quot;mp3$&quot;, sel_tabs$sound.files, ignore.case = TRUE), ]
+
+sel_tabs_mp3s$org.sound.file &lt;- sel_tabs_mp3s$sound.files
+
+cs &lt;- check_sels(sel_tabs_mp3s, pb = FALSE, path = cut_path)
+
+exp_raven(X = sel_tabs_mp3s, path = cut_path, sound.file.path = normalizePath(cut_path), file.name = &quot;song_detection_sel_tab_mp3s.txt&quot;)</code></pre>
+</div>
+<div id="measure-amplitude" class="section level1">
+<h1>Measure amplitude</h1>
+<pre class="r"><code>sels &lt;- imp_raven(warbler.format = TRUE, all.data = TRUE, path = &quot;./data/raw&quot;, pb = FALSE, files = c(&quot;song_detection_sel_tab_mp3s.txt&quot;,&quot;song_detection_sel_tab_wavs.txt&quot;))
+
+pos &lt;- regexpr(&quot;\\.([[:alnum:]]+)$&quot;,  sel_tabs$sound.files)
+sel_tabs$extsn &lt;- tolower(ifelse(pos &gt; -1L, substring(sel_tabs$sound.files,pos + 1L), &quot;&quot;))
+
+sel_tabs$extsn[extsn == &quot;wav&quot;] &lt;- &quot;flac&quot;
+
+
+sel_tabs$cuts &lt;- paste0(paste(gsub(&quot;.WAV&quot;, &quot;&quot;, sel_tabs$sound.files, ignore.case = TRUE), sel_tabs$selec, sep = &quot;-&quot;), &quot;.&quot;, extsn)
+
+sel_tabs$cuts[grep(&quot;mp3$&quot;,sel_tabs$cuts)] &lt;- sel_tabs$sound.files[grep(&quot;mp3$&quot;,sel_tabs$cuts)]
+
+names(sel_tabs)[names(sel_tabs) == &quot;Ind Color&quot; ] &lt;- &quot;ID&quot;
+
+
+pos &lt;- regexpr(&quot;\\.([[:alnum:]]+)$&quot;,  sels$sound.files)
+sels$extsn &lt;- tolower(ifelse(pos &gt; -1L, substring(sels$sound.files,pos + 1L), &quot;&quot;))
+
+sels$sound.files[sels$sound.files == &quot;424_SUR_05-Feb-2021_07.58_09.52_A41.flac&quot;] &lt;- &quot;424_SUR_05-Feb-2021_07.58_09.52_A41A.flac&quot;
+
+sels$year &lt;- ifelse(grepl(&quot;2021&quot;, sels$sound.files), 2021, 2019)
+
+sels$year[grep(&quot;mp3$&quot;, sels$sound.files)]  &lt;- as.numeric(sapply(grep(&quot;mp3$&quot;, sels$sound.files, value = TRUE), function(x) strsplit(x, split = &quot;\\.&quot;)[[1]][3]))
+
+sels$Treatment[sels$extsn == &quot;flac&quot;] &lt;- sapply(which(sels$extsn == &quot;flac&quot;), function(x){
+  y &lt;- sel_tabs$Treatment[sel_tabs$cuts == sels$sound.files[x]][1]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$ID &lt;- sapply(1:nrow(sels), function(x){
+  y &lt;- sel_tabs$ID[sel_tabs$cuts == sels$sound.files[x]][1]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+
+# table(sels$year, sels$Treatment)
+
+
+am_set &lt;- as.data.frame(read_excel(path = &quot;./data/raw/audiomoth_recording_settings.xlsx&quot;))
+
+sels$org.sound.file &lt;- gsub(&quot;.wav&quot;, &quot;&quot;, sels$org.sound.file, ignore.case = TRUE)
+
+sels$Audiomoth &lt;- sapply(1:nrow(sels), function(x){
+  y &lt;- am_set$Audiomoth[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$Calibration &lt;- sapply(1:nrow(sels), function(x){
+  y &lt;- am_set$Calibration[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$`Raven selections file` &lt;- sapply(1:nrow(sels), function(x){
+  y &lt;- am_set$`Raven selections file`[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+sels$Gain &lt;- sapply(1:nrow(sels), function(x){
+  y &lt;- am_set$Gain[am_set$`Original audio file` == sels$org.sound.file[x]]
+  if(length(y) == 0) return(NA) else return(y)
+  })
+
+# sels2 &lt;- merge(sels, am_set[, c(&quot;Raven selections file&quot;, &quot;Audiomoth&quot;, &quot;Gain&quot;, &quot;Calibration&quot;, &quot;Original audio file&quot;)], by.x = &quot;org.sound.file&quot;, by.y = &quot;Original audio file&quot;)
+
+
+sels$duration &lt;- sels$old.selec &lt;- sels$View &lt;- sels$Channel &lt;- sels$`Begin Path` &lt;- sels$`File Offset (s)` &lt;- NULL
+
+sels$cut.label &lt;- 1
+
+
+
+
+sat &lt;- detec_saturation(sels, parallel = 20, bit = 16, path = cut_path)
+
+sels$prop.saturated &lt;- sat$prop.saturated
+
+
+# measure uncalibrated SPL
+sels$uncal.spl &lt;- pbsapply(1:nrow(sels), cl = 20, function(x) {
+
+  signal &lt;- read_sound_file(sels, index = x, path = cut_path)
+  
+   # signal &lt;- ffilter(signal, f = signal@samp.rate, from = bp[1] * 1000, to = bp[2] * 1000, bandpass = TRUE, output = &quot;Wave&quot;)
+   
+  sigamp &lt;- seewave::rms(seewave::env(signal, envt = &quot;abs&quot;, plot = FALSE))
+  signaldb &lt;- 20 * log10(sigamp)
+  
+    return(signaldb)
+  }
+)
+
+cal &lt;- read.csv(&quot;./output/spl_constant_for_audiomoth_calibration.csv&quot;)
+
+cal &lt;- cal[cal$sound.files != &quot;soundmeter&quot;, ]
+
+cal$Audiomoth &lt;- substr(sapply(cal$sound.files, function(x) strsplit(x, split = &quot;_&quot;)[[1]][3]), 2, 3)
+
+sels$Audiomoth[is.na(sels$Audiomoth)] &lt;- &quot;non-calibrated&quot;
+sels$Gain[is.na(sels$Gain)] &lt;- &quot;non-calibrated&quot;
+
+cal$Audiomoth[cal$Audiomoth == &quot;41&quot;] &lt;- &quot;41A&quot;
+
+cal$gain &lt;- sapply(cal$sound.files, function(x) strsplit(x, split = &quot;_&quot;)[[1]][2])
+
+
+amp &lt;- read.csv(&quot;./output/calibrated_amplitude_all_songs.csv&quot;)
+
+
+cal_spl_for_calibrated_l &lt;- pblapply(unique(sels$org.sound.file[sels$Audiomoth != &quot;non-calibrated&quot;]), cl = 10, function(x){
+  X &lt;- sels[sels$org.sound.file == x, ]
+  X$cal.spl &lt;- X$uncal.spl + cal$mean.diff[cal$Audiomoth == X$Audiomoth[1] &amp; cal$gain == X$Gain[1]]
+return(X)
+    }
+)
+
+cal_spl_for_calibrated &lt;- do.call(rbind, cal_spl_for_calibrated_l)
+
+# speudo-calibration for non-calibrated audiomoth recordings forcing them to have a mean SPL equals to the mean SPL of all calibrated songs
+cal.spl_for_non_calibrated_l &lt;- pblapply(unique(sels$org.sound.file[sels$Audiomoth == &quot;non-calibrated&quot;]), cl = 10, function(x){
+  X &lt;- sels[sels$org.sound.file == x, ]
+  
+  X$cal.spl &lt;- X$uncal.spl + mean(cal_spl_for_calibrated$cal.spl) - mean(X$uncal.spl)
+  return(X)
+  }
+)
+
+cal.spl_for_non_calibrated &lt;- do.call(rbind, cal.spl_for_non_calibrated_l)
+
+sels &lt;- rbind(cal.spl_for_non_calibrated, cal_spl_for_calibrated)
+
+# extract hour
+sels$time &lt;- as.numeric(substr(sels$sound.files, 21, 22))
+
+sels$time[grep(&quot;mp3$&quot;, sels$sound.files)]  &lt;- as.numeric(sapply(grep(&quot;mp3$&quot;, sels$sound.files, value = TRUE), function(x) strsplit(x, split = &quot;\\.&quot;)[[1]][6]))
+
+
+sels$time[sels$org.sound.file == &quot;448_CCL_26-Feb-2021_00.00_00.00_AC8&quot;] &lt;- 8
+
+sels$period &lt;- ifelse(sels$time &gt; 12, &quot;afternoon&quot;, &quot;morning&quot;)
+
+sels$ID &lt;- substr(sels$sound.files, 0 , 3)
+
+sels$ID[grep(&quot;mp3$&quot;, sels$sound.files)] &lt;- sapply(grep(&quot;mp3$&quot;, sels$sound.files, value = TRUE), function(x) strsplit(x, split = &quot;\\.&quot;)[[1]][1])
+
+# add lek
+sels$lek &lt;- substr(sels$sound.files, 5, 7)
+
+sels$lek[grep(&quot;mp3$&quot;, sels$sound.files)] &lt;- sapply(grep(&quot;mp3$&quot;, sels$sound.files, value = TRUE), function(x) strsplit(x, split = &quot;\\.&quot;)[[1]][2])
+
+
+sels$bottom.freq[is.na(sels$bottom.freq)] &lt;- mean(sels$bottom.freq, na.rm = TRUE)
+sels$top.freq[is.na(sels$top.freq)] &lt;- mean(sels$top.freq, na.rm = TRUE)
+
+# add song type
+songtype_df &lt;- read.csv(&quot;./output/songtype_classification.csv&quot;)
+
+sels$songtype &lt;- sapply(1:nrow(sels), function(x) songtype_df$songtype[songtype_df$ID == sels$ID[x]][1])
+
+sels$duration &lt;- sels$end - sels$start
+sels &lt;- sels[sels$duration &gt; 0.1 &amp; sels$duration &lt; 0.18, ]
+
+
+hist(sels$duration[sels$sound.files == &quot;395_SUR_26-Jul-2019_08.46_09.06_AEZ-5.flac&quot;])
+hist(sels$duration)
+range(sels$duration)
+quantile(sels$duration)
+
+cs &lt;- checksels(sels)
+
+full_spectrograms(X = sels, sxrow = 5, rows = 13, fast.spec = TRUE, horizontal = TRUE, path = cut_path, parallel = 20, flim = c(1, 12), dest.path =  &quot;./data/processed/full_spectrograms_autodetec&quot;)
+
+# write.csv(sels, &quot;./output/calibrated_amplitude_all_songs.csv&quot;, row.names = FALSE)</code></pre>
 </div>
 <div id="descriptive-stats" class="section level1">
 <h1>Descriptive stats</h1>
 <ul>
-<li><p>Number of recorded individuals = 20</p></li>
+<li><p>Number of recorded individuals = 36</p></li>
 <li><p>Sound file sample size for each treatment:</p></li>
 </ul>
 <pre class="r"><code># read data
 sels &lt;- read.csv(&quot;./output/calibrated_amplitude_all_songs.csv&quot;)
 
-sub_sels &lt;- sel_tabs[!duplicated(sel_tabs[, c(&quot;ID&quot;, &quot;Treatment&quot;)]), ]
+sub_sels &lt;- sels[!duplicated(sels[, c(&quot;sound.files&quot;, &quot;Treatment&quot;)]), ]
 
 agg &lt;- aggregate(sound.files ~ Treatment, sub_sels, length)
 
 # order levels
-agg &lt;- agg[match(treatments, agg$Treatment), ]
+agg &lt;- agg[match(treatments[treatments %in% agg$Treatment], agg$Treatment), ]
 
 kable(agg)</code></pre>
 <table>
@@ -1741,51 +1934,46 @@ kable(agg)</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">8</td>
-<td align="left">Calibration</td>
-<td align="right">16</td>
+<td align="left">9</td>
+<td align="left">Regular_sining</td>
+<td align="right">124</td>
 </tr>
 <tr class="even">
-<td align="left">10</td>
-<td align="left">Regular_sining</td>
-<td align="right">20</td>
+<td align="left">8</td>
+<td align="left">Coordination</td>
+<td align="right">52</td>
 </tr>
 <tr class="odd">
-<td align="left">9</td>
-<td align="left">Coordination</td>
-<td align="right">11</td>
-</tr>
-<tr class="even">
 <td align="left">1</td>
 <td align="left">After_chase</td>
-<td align="right">3</td>
+<td align="right">6</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">7</td>
 <td align="left">Before_playback</td>
-<td align="right">10</td>
+<td align="right">24</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">4</td>
 <td align="left">After_playback</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">5</td>
-<td align="left">Before_interaction</td>
-<td align="right">4</td>
+<td align="right">29</td>
 </tr>
 <tr class="even">
-<td align="left">2</td>
-<td align="left">After_interaction</td>
-<td align="right">4</td>
+<td align="left">5</td>
+<td align="left">Before_interaction</td>
+<td align="right">24</td>
 </tr>
 <tr class="odd">
+<td align="left">2</td>
+<td align="left">After_interaction</td>
+<td align="right">24</td>
+</tr>
+<tr class="even">
 <td align="left">6</td>
 <td align="left">Before_noise</td>
 <td align="right">1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">3</td>
 <td align="left">After_noise</td>
 <td align="right">1</td>
@@ -1795,10 +1983,13 @@ kable(agg)</code></pre>
 <ul>
 <li>Individual sample size for each treatment:</li>
 </ul>
-<pre class="r"><code>agg &lt;- aggregate(sound.files ~ Treatment, sub_sels, length)
+<pre class="r"><code>sub_sels &lt;- sels[!duplicated(sels[, c(&quot;ID&quot;, &quot;Treatment&quot;)]), ]
+
+agg &lt;- aggregate(sound.files ~ Treatment, sub_sels, length)
 
 # order levels
-agg &lt;- agg[match(treatments, agg$Treatment), ]
+agg &lt;- agg[match(treatments[treatments %in% agg$Treatment], agg$Treatment), ]
+
 
 kable(agg)</code></pre>
 <table>
@@ -1811,91 +2002,147 @@ kable(agg)</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">8</td>
-<td align="left">Calibration</td>
-<td align="right">16</td>
-</tr>
-<tr class="even">
-<td align="left">10</td>
+<td align="left">9</td>
 <td align="left">Regular_sining</td>
 <td align="right">20</td>
 </tr>
-<tr class="odd">
-<td align="left">9</td>
+<tr class="even">
+<td align="left">8</td>
 <td align="left">Coordination</td>
 <td align="right">11</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">1</td>
 <td align="left">After_chase</td>
 <td align="right">3</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">7</td>
 <td align="left">Before_playback</td>
-<td align="right">10</td>
+<td align="right">17</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">4</td>
 <td align="left">After_playback</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">5</td>
-<td align="left">Before_interaction</td>
-<td align="right">4</td>
+<td align="right">17</td>
 </tr>
 <tr class="even">
-<td align="left">2</td>
-<td align="left">After_interaction</td>
-<td align="right">4</td>
+<td align="left">5</td>
+<td align="left">Before_interaction</td>
+<td align="right">17</td>
 </tr>
 <tr class="odd">
+<td align="left">2</td>
+<td align="left">After_interaction</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
 <td align="left">6</td>
 <td align="left">Before_noise</td>
 <td align="right">1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">3</td>
 <td align="left">After_noise</td>
 <td align="right">1</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>sels &lt;- imp_raven(warbler.format = TRUE, all.data = TRUE, files = &quot;song_detection_sel_tabl.txt&quot;, path = &quot;./data/processed&quot;, pb = FALSE)
-
-# cs &lt;- checksels(sels)
-
-sel_tabs$cuts &lt;- paste0(paste(gsub(&quot;.WAV&quot;, &quot;&quot;, sel_tabs$sound.files, ignore.case = TRUE), sel_tabs$selec, sep = &quot;-&quot;), &quot;.wav&quot;)
-
-
-sels$sound.files[sels$sound.files == &quot;424_SUR_05-Feb-2021_07.58_09.52_A41&quot;] &lt;- &quot;424_SUR_05-Feb-2021_07.58_09.52_A41A&quot;
-
-sels &lt;- merge(sels, sel_tabs[!duplicated(sel_tabs$cuts), c(&quot;cuts&quot;, &quot;Treatment&quot;, &quot;ID&quot;, &quot;Saturation&quot;, &quot;sound.files&quot;)], by.x = &quot;sound.files&quot;, by.y = &quot;cuts&quot;)
-
-names(sels)[names(sels) == &quot;sound.files.y&quot;] &lt;- &quot;org.sound.file&quot;
-
-am_set &lt;- read_excel(path = &quot;./data/raw/audiomoth_recording_settings.xlsx&quot;)
-
-am_set$`Original audio file` &lt;- paste0(am_set$`Original audio file`, &quot;.WAV&quot;)
-
-sels &lt;- merge(sels, am_set[, c(&quot;Raven selections file&quot;, &quot;Audiomoth&quot;, &quot;Gain&quot;, &quot;Calibration&quot;, &quot;Original audio file&quot;)], by.x = &quot;org.sound.file&quot;, by.y = &quot;Original audio file&quot;)
-
-
-sels$duration &lt;- sels$old.selec &lt;- sels$View &lt;- sels$Channel &lt;- sels$`Begin Path` &lt;- sels$`File Offset (s)` &lt;- NULL
-
-sels$cut.label &lt;- 1
-
-sat &lt;- detec_saturation(sels, parallel = 10, bit = 16, path = cut_path)
-
-sels$prop.saturated &lt;- sat$prop.saturated
-
-est &lt;- selection_table(sels, extended = TRUE, mar = 0.05, by.song = &quot;cut.label&quot;, confirm.extended = FALSE)
-
-saveRDS(est, &quot;./data/processed/est_lbh_amplitude.RDS&quot;)</code></pre>
 <ul>
-<li><p>Total number of songs = 22423</p></li>
-<li><p>Mean number of songs per individual = 1121</p></li>
+<li>Individual sample size for each treatment by year (recordings from years before 2019 were extracted from videos in mp3 format):</li>
+</ul>
+<pre class="r"><code>sub_sels &lt;- sels[!duplicated(sels[, c(&quot;ID&quot;, &quot;year&quot;, &quot;Treatment&quot;)]), ]
+
+sub_sels$year &lt;- as.factor(sub_sels$year)
+
+agg &lt;- as.data.frame.matrix(table(sub_sels$Treatment, sub_sels$year))
+
+
+# order levels
+agg &lt;- agg[match(treatments[treatments %in% rownames(agg)], rownames(agg)), ]
+
+agg[agg == 0] &lt;- &quot;&quot;
+
+kable(agg)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">2013</th>
+<th align="left">2014</th>
+<th align="left">2019</th>
+<th align="right">2021</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Regular_sining</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="right">20</td>
+</tr>
+<tr class="even">
+<td align="left">Coordination</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">After_chase</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Before_playback</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left">8</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">After_playback</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left">8</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">Before_interaction</td>
+<td align="left">10</td>
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">After_interaction</td>
+<td align="left">10</td>
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Before_noise</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">After_noise</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p>Total number of songs = 25400</p></li>
+<li><p>Mean number of songs per individual = 706</p></li>
 <li><p>Songs per treatment:</p></li>
 </ul>
 <pre class="r"><code>agg &lt;- aggregate(selec ~ Treatment, sels, length)
@@ -1916,7 +2163,7 @@ kable(agg)</code></pre>
 <tr class="odd">
 <td align="left">9</td>
 <td align="left">Regular_sining</td>
-<td align="right">14536</td>
+<td align="right">14542</td>
 </tr>
 <tr class="even">
 <td align="left">8</td>
@@ -1931,61 +2178,68 @@ kable(agg)</code></pre>
 <tr class="even">
 <td align="left">7</td>
 <td align="left">Before_playback</td>
-<td align="right">2457</td>
+<td align="right">3374</td>
 </tr>
 <tr class="odd">
 <td align="left">4</td>
 <td align="left">After_playback</td>
-<td align="right">2357</td>
+<td align="right">3989</td>
 </tr>
 <tr class="even">
 <td align="left">5</td>
 <td align="left">Before_interaction</td>
-<td align="right">81</td>
+<td align="right">291</td>
 </tr>
 <tr class="odd">
 <td align="left">2</td>
 <td align="left">After_interaction</td>
-<td align="right">90</td>
+<td align="right">302</td>
 </tr>
 </tbody>
 </table>
 <ul>
-<li>Maximum number of saturated songs = -</li>
+<li>Maximum number of saturated songs = 0.006071</li>
 </ul>
-</div>
-<div id="measure-amplitude" class="section level1">
-<h1>Measure amplitude</h1>
-<pre class="r"><code>sels$uncal.spl &lt;- pbsapply(1:nrow(sels), cl = 20, function(x) {
+<pre class="r"><code>amp &lt;- read.csv(&quot;./output/calibrated_amplitude_all_songs.csv&quot;)
 
-  signal &lt;- read_wave(sels, index = x, path = cut_path)
+# options for warbleR
+warbleR_options(wav.path = cut_path, wl = 400)
+check_sels(amp)
+
+# measure signal to noise ratio
+snr &lt;- sig2noise(amp, 0.1, path = cut_path)
+
+
+# get the 3 songs with the highest SNR for each individual
+examp_l &lt;- lapply(unique(snr$ID), function(x) {
   
-   # signal &lt;- ffilter(signal, f = signal@samp.rate, from = bp[1] * 1000, to = bp[2] * 1000, bandpass = TRUE, output = &quot;Wave&quot;)
-   
-  sigamp &lt;- seewave::rms(seewave::env(signal, envt = &quot;abs&quot;, plot = FALSE))
-  signaldb &lt;- 20 * log10(sigamp)
+  X &lt;- snr[snr$ID == x, ]
   
-    return(signaldb)
-  })
+  X &lt;- X[order(X$SNR, decreasing = TRUE), ]
+  
+  return(X[1:3, ])
+})
 
-head(sels)
+# make it a data frame
+examp &lt;- do.call(rbind, examp_l)
 
-cal &lt;- read.csv(&quot;./output/spl_constant_for_audiomoth_calibration.csv&quot;)
+# add lek label
+examp$lek &lt;- substr(examp$org.sound.file, 5, 7)
 
-cal &lt;- cal[cal$sound.files != &quot;soundmeter&quot;, ]
+examp$lek[grep(&quot;mp3$&quot;, examp$sound.files)] &lt;- sapply(grep(&quot;mp3$&quot;, examp$sound.files, value = TRUE), function(x) strsplit(x, split = &quot;\\.&quot;)[[1]][2])
 
-cal$audiomoth &lt;- substr(sapply(cal$sound.files, function(x) strsplit(x, split = &quot;_&quot;)[[1]][3]), 2, 3)
+examp_est &lt;- selection_table(examp, extended = TRUE, confirm.extended = FALSE)
 
-cal$audiomoth[cal$audiomoth == &quot;41&quot;] &lt;- &quot;41A&quot;
+# make catalog
+catalog(examp_est, flim = c(0, 14), ovlp = 95, nrow = 10, ncol = 6, wl = 400, pal = viridis, collevels = seq(-100, 0, 1), labels = c(&quot;ID&quot;, &quot;lek&quot;), width = 15.5, height = 8.5, res = 200, tags = c(&quot;lek&quot;), tag.pal = list(magma), mar = 0.005, hatching = 2, parallel = 1)
 
-cal$gain &lt;- sapply(cal$sound.files, function(x) strsplit(x, split = &quot;_&quot;)[[1]][2])
+move_imgs(from = cut_path, to = &quot;./data/raw&quot;, overwrite = TRUE)
 
 
-sels$cal.spl &lt;- pbsapply(1:nrow(sels), cl = 10, function(x)
-  sels$uncal.spl[x] + cal$mean.diff[cal$audiomoth == sels$Audiomoth[x] &amp; cal$gain == sels$Gain[x]]
-)
+songtype_df &lt;- data.frame(ID = c(397, 400, 403, 413, 415, 416, 417, 419, 422, 423, 424, 432, 433, 435, 437, 438, 444, 446, 448, 449, 0, 108, 124, 146, 176, 178, 179, 36, 54, 9, 384, 390, 391, 395, 398, 402), songtype = c(&quot;a&quot;, &quot;b&quot;, &quot;f&quot;, &quot;c&quot;, &quot;f&quot;, &quot;c&quot;, &quot;c&quot;,  &quot;g&quot;,  &quot;e&quot;, &quot;c&quot;, &quot;d&quot;, &quot;h&quot;, &quot;i&quot;, &quot;j&quot;, &quot;i&quot;, &quot;j&quot;, &quot;l&quot;, &quot;k&quot;, &quot;l&quot;, &quot;m&quot;, &quot;n&quot;, &quot;l&quot;, &quot;o&quot;, &quot;p&quot;, &quot;q&quot;, &quot;q&quot;, &quot;q&quot;, &quot;r&quot;, &quot;q&quot;, &quot;q&quot;, &quot;s&quot;, &quot;a&quot;, &quot;a&quot;, &quot;a&quot;, &quot;c&quot;, &quot;b&quot;))
 
-write.csv(sels, &quot;./output/calibrated_amplitude_all_songs.csv&quot;, row.names = FALSE)</code></pre>
+
+write.csv(songtype_df, &quot;./output/songtype_classification.csv&quot;, row.names = FALSE)</code></pre>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
 <pre class="r"><code>sessionInfo()</code></pre>
@@ -2011,7 +2265,7 @@ FALSE [8] base
 FALSE 
 FALSE other attached packages:
 FALSE  [1] readxl_1.3.1       viridis_0.5.1      viridisLite_0.3.0  Rraven_1.0.12     
-FALSE  [5] warbleR_1.1.26     NatureSounds_1.0.3 knitr_1.31         seewave_2.1.6     
+FALSE  [5] warbleR_1.1.27     NatureSounds_1.0.3 knitr_1.31         seewave_2.1.6     
 FALSE  [9] tuneR_1.3.3        ggplot2_3.3.3      pbapply_1.4-3     
 FALSE 
 FALSE loaded via a namespace (and not attached):
@@ -2019,12 +2273,12 @@ FALSE  [1] Rcpp_1.0.6        highr_0.8         cellranger_1.1.0  pillar_1.4.6
 FALSE  [5] compiler_4.0.3    bitops_1.0-6      tools_4.0.3       digest_0.6.27    
 FALSE  [9] evaluate_0.14     lifecycle_0.2.0   tibble_3.0.4      gtable_0.3.0     
 FALSE [13] fftw_1.0-6        pkgconfig_2.0.3   rlang_0.4.10      yaml_2.2.1       
-FALSE [17] xfun_0.21         gridExtra_2.3     withr_2.4.1       stringr_1.4.0    
+FALSE [17] xfun_0.22         gridExtra_2.3     withr_2.4.1       stringr_1.4.0    
 FALSE [21] dplyr_1.0.2       generics_0.1.0    vctrs_0.3.6       grid_4.0.3       
 FALSE [25] tidyselect_1.1.0  glue_1.4.2        R6_2.5.0          dtw_1.22-3       
 FALSE [29] rmarkdown_2.4     purrr_0.3.4       magrittr_2.0.1    scales_1.1.1     
 FALSE [33] ellipsis_0.3.1    htmltools_0.5.1.1 MASS_7.3-53       colorspace_2.0-0 
-FALSE [37] proxy_0.4-25      stringi_1.5.3     RCurl_1.98-1.2    signal_0.7-6     
+FALSE [37] proxy_0.4-25      stringi_1.5.3     RCurl_1.98-1.3    signal_0.7-6     
 FALSE [41] munsell_0.5.0     rjson_0.2.20      crayon_1.4.1</code></pre>
 </div>
 </div>
