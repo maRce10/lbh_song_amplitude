@@ -370,6 +370,9 @@ ggplot(Y, aes(y=values, x = ind)) +
 
 </div>
 
+
+---
+
 # SPL vs condition
 
 - Only for individuals recorded in the morning (afternoon recordings were excluded)
@@ -387,8 +390,9 @@ $$SPL \sim + lifting\ power * body\ size +  (1 | individual) + (1 | song\ type)$
 1. Null model with no predictor (intercept only):
 $$SPL \sim + 1 + (1 | individual) + (1 | song\ type)$$
 
-```{r SPL vs condition, eval = TRUE}
+### Correlation between body size parameters included in the PCA
 
+```{r SPL vs condition, eval = TRUE}
 caps <- read_excel("/home/m/Dropbox/LBH data/Additional data files/LBH captures data.xlsx")
 
 # same variables as in paper on spatial memory and body size  
@@ -398,7 +402,11 @@ size_vars <- caps[caps$`Bird ID` %in% amp$ID, c("Bird ID", "Total culmen", "Flat
 size_vars$`Central rectriz`[size_vars$`Bird ID` == 419] <- mean(size_vars$`Central rectriz`, na.rm = TRUE)
 
 cor(size_vars[, c("Total culmen", "Flattened wing length", "Weight", "Central rectriz")], use = "pairwise.complete.obs")
+```
 
+### Variance explained by each PC
+
+```{r SPL vs condition 2, eval = TRUE}
 mean_size <- aggregate(. ~ `Bird ID`, data = size_vars, FUN = mean, na.action = "na.omit")
 
 pca <- prcomp(mean_size[, c("Total culmen", "Flattened wing length", "Weight", "Central rectriz")], scale. = TRUE)
@@ -492,13 +500,6 @@ body_size_data <- rm_outlier_amp[rm_outlier_amp$Treatment == "Regular_singing" &
 agg_size <- aggregate(cbind(cal.spl, lift.weight, PC1) ~ ID, data = body_size_data, mean)
 agg_size$count <- aggregate(PC1 ~ ID, data = body_size_data, length)$PC1
 
-ggplot(agg_size, aes(x = PC1, y = cal.spl)) +
-    geom_jitter(position = position_jitter(width = 0.2, height = 0.2), aes(size = count)) +
-  labs(x = "Body size (PC1)", y = "Sound pressure level (dB)", color = "Period", size = "Sample size") +
-  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
-  theme_classic(base_size = 24) + 
-  # geom_abline(slope = c(ES_continious = sm_size[2, 1], ES_continious_plus_ES_interaction=  sm_size[2, 1] + sm_size[4, 1]), intercept = c(intercept = sm_size[1, 1], intercept_plus_ES_categorical = sm_size[1, 1] + sm_size[3, 1]), color = viridis(2, begin = 0.2, end = 0.8, alpha = 0.6)[2:1], size = 1) +
-guides(colour = guide_legend(override.aes = list(size=8)))
 
 ggplot(agg_size, aes(x = PC1, y = cal.spl)) +
     geom_jitter(position = position_jitter(width = 0.2, height = 0.2), aes(size = count)) +
@@ -544,16 +545,23 @@ ggplot(Y, aes(y=values, x = ind)) +
 
 </div>
 
+
+---
+
 # SPL vs playback
 
 - Using data from 2019 and 2021
 - Recordings from 2019 were not calibrated and were center around SPL mean from 2021
 - Comparing before playback vs after playback (during regular singing)
+- Including condition parameters as covariates
+- No songtype random intercept was included
 
 1. Playback as predictor and random slope:
-$$SPL \sim + body\ size + (playback | individual) + (1 | song\ type)$$
-1. Playback as predictor and random slope:
-$$SPL \sim + body\ size + (playback | individual) + (1 | song\ type)$$  
+$$SPL \sim + playback + (playback | individual)$$
+1. Playback and body size interaction as predictor and random intercept:
+$$SPL \sim + playback * body\ size + (1 | individual) $$  
+1. Playback and lifting power interaction as predictor and random intercept:
+$$SPL \sim + playback * lifting\ power + (1 | individual) $$  
 
 1. Playback as predictor and only random intercept:
 $$SPL \sim + playback + (1 | individual) + (1 | song\ type)$$
@@ -629,29 +637,33 @@ ggplot(agg_playback, aes(x = Treatment, y = cal.spl, color = Treatment)) +
 if (pval_rand_slope_vs_rand_intercept < 0.0001) "< 0.0001" else pval_rand_slope_vs_rand_intercept`), the interaction with body size model (p = `r 
 if (pval_rand_slope_vs_interaction_size < 0.0001) "< 0.0001" else pval_rand_slope_vs_interaction_size`), the interaction with lifting power model (p = `r 
 if (pval_rand_slope_vs_interaction_lift < 0.0001) "< 0.0001" else pval_rand_slope_vs_interaction_lift`) and the null model (p = `r 
-if (pval_rand_intercept_vs_null < 0.0001) "< 0.0001" else pval_rand_intercept_vs_null`)
+if (pval_rand_slope_vs_null < 0.0001) "< 0.0001" else pval_rand_slope_vs_null`)
 
 
 <div class="alert alert-info">
 
  - The playback stimuli elicits a significant change in SPL but the direction of the response varies between individuals
- - Direction of the response doesn't seem to be affected by body size
+ - Direction of the response doesn't seem to be affected by individual condition (neither body size nor lifting power)
 
 </div>
+
+
+---
 
 # SPL vs coordination
 
 - Random slope models, using data from 2019 and 2021
 - Only for individuals in which coordination was observed when recorded
-- SPL of songs sang during coordinated singing were compared to regular singing songs
+- SPL of songs sang during coordinated singing were compared to regular singing songs from the same recording session
+- No song type random intercept was included
 
 1. Coordination as predictor and random slope:
-$$SPL \sim + coordination + (coordination | individual) + (1 | song\ type)$$
-1.Coordination as predictor and random intercept only:
-$$SPL \sim + coordination + (1 | individual) + (1 | song\ type)$$
+$$SPL \sim + coordination + (coordination | individual)$$
+1. Coordination as predictor and random intercept only:
+$$SPL \sim + coordination + (1 | individual)$$
 
 1. Null model with no predictor (random intercept only):
-$$SPL \sim + 1 + (1 | individual) + (1 | song\ type)$$
+$$SPL \sim + 1 + (1 | individual)$$
 
 ```{r SPL vs coordination models, eval = TRUE}
 # fixed effects with HPD intervals
@@ -659,33 +671,27 @@ coord_data <- rm_outlier_amp[rm_outlier_amp$org.sound.file %in% rm_outlier_amp$o
 
 coord_data <- coord_data[coord_data$Treatment %in%  c("Regular_singing","Coordination"), ]
 
-random_slope_mod <- lmer(cal.spl ~ Treatment  + (Treatment|ID) + (1|songtype), data = coord_data, REML = FALSE)
+random_slope_mod <- lmer(cal.spl ~ Treatment  + (Treatment|ID), data = coord_data, REML = FALSE)
 
-random_intercept_only_mod <- lmer(cal.spl ~ Treatment + (1|ID) + (1|songtype), data = coord_data, REML = FALSE)
+random_intercept_only_mod <- lmer(cal.spl ~ Treatment + (1|ID), data = coord_data, REML = FALSE)
 
-null_mod <- lmer(cal.spl ~ 1  + (1|ID) + (1|songtype), data = coord_data, REML = FALSE)
+null_mod <- lmer(cal.spl ~ 1  + (1|ID), data = coord_data, REML = FALSE)
+
 ```
 
 ```{r SPL vs coordination p values, eval = TRUE}
 
 d1 <- (-2*logLik(random_intercept_only_mod)) + (2*logLik(random_slope_mod))
 
-# 0.5*pchisq(d1[1], 0, lower.tail=FALSE) + 0.5*pchisq(d1[1], 1, lower.tail=FALSE)
-
+random_slope_vs_random_intercept <- 0.5*pchisq(d1[1], 0, lower.tail=FALSE) + 0.5*pchisq(d1[1], 1, lower.tail=FALSE)
 
 d2 <- (-2*logLik(null_mod)) + (2*logLik(random_intercept_only_mod))
 
-# 0.5*pchisq(d2[1], 0, lower.tail=FALSE) + 0.5*pchisq(d2[1], 1, lower.tail=FALSE)
+random_intercept_vs_null <- 0.5*pchisq(d2[1], 0, lower.tail=FALSE) + 0.5*pchisq(d2[1], 1, lower.tail=FALSE)
 
 d3 <- (-2*logLik(null_mod)) + (2*logLik(random_slope_mod))
 
-# 0.5*pchisq(d3[1], 0, lower.tail=FALSE) + 0.5*pchisq(d3[1], 1, lower.tail=FALSE)
-
-# sm_playback <- as.data.frame(fixef(random_slope_mod), confint(random_slope_mod))
-# 
-# sm_playback
-
-summary(random_slope_mod)
+random_slope_vs_null <- 0.5*pchisq(d3[1], 0, lower.tail=FALSE) + 0.5*pchisq(d3[1], 1, lower.tail=FALSE)
 
 ```
 
@@ -708,17 +714,20 @@ ggplot(agg_coord, aes(x = Treatment, y = cal.spl, color = Treatment)) +
 
 ```
 
-- The random slope model was not significantly better than the random intercept model (p = `r 
-if (0.5*pchisq(d1[1], 0, lower.tail=FALSE) + 0.5*pchisq(d1[1], 1, lower.tail=FALSE) < 0.0001) "< 0.0001" else 0.5*pchisq(d1[1], 0, lower.tail=FALSE) + 0.5*pchisq(d1[1], 1, lower.tail=FALSE)`) nor the null model (p = `r 
-if (0.5*pchisq(d3[1], 0, lower.tail=FALSE) + 0.5*pchisq(d3[1], 1, lower.tail=FALSE) < 0.0001) "< 0.0001" else 0.5*pchisq(d3[1], 0, lower.tail=FALSE) + 0.5*pchisq(d3[1], 1, lower.tail=FALSE)`)
+- The random slope model is significantly better than the random intercept model (p = `r 
+if (pval_rand_slope_vs_rand_intercept < 0.0001) "< 0.0001" else pval_rand_slope_vs_rand_intercept`) and the null model (p = `r 
+if (random_slope_vs_null < 0.0001) "< 0.0001" else random_slope_vs_null`)
 
 
 <div class="alert alert-info">
 
- - Vocal coordination is not associated with detectable changes in SPL
-
+ - The playback stimuli elicits a significant change in SPL
+ 
 </div>
 
+
+
+---
 
 # SPL vs aggresive interaction
 
@@ -729,13 +738,13 @@ if (0.5*pchisq(d3[1], 0, lower.tail=FALSE) + 0.5*pchisq(d3[1], 1, lower.tail=FAL
     - 2) Interaction type (chase of perch interaction)
 
 1. Interaction as predictor:
-$$SPL \sim + interaction + (1 | individual) + (1 | song\ type)$$
+$$SPL \sim + interaction + (1 | individual)$$
 1. Interaction and interaction type as predictors:
-$$SPL \sim + interaction + interaction\ type + (1 | individual) + (1 | song\ type)$$
+$$SPL \sim + interaction + interaction\ type + (1 | individual)$$
 1. Statistical interaction between "Interaction" and "interaction type" as predictor:
-$$SPL \sim + interaction * interaction\ type + (1 | individual) + (1 | song\ type)$$
+$$SPL \sim + interaction * interaction\ type + (1 | individual)$$
 1. Null model with no predictor (intercept only):
-$$SPL \sim + 1 + (1 | individual) + (1 | song\ type)$$
+$$SPL \sim + 1 + (1 | individual)$$
 
 ```{r SPL vs interaction models subset data, eval = TRUE}
 # subset data
@@ -744,15 +753,16 @@ dat_chase <- rm_outlier_amp[rm_outlier_amp$org.sound.file %in% rm_outlier_amp$or
 dat_chase <- dat_chase[dat_chase$Treatment %in% c("Regular_singing", "After_chase"),]
 
 
-dat_chase$inter_treatment <- ifelse(grepl("After", dat_chase$Treatment), "After", "Before")
+dat_chase$inter_treatment <- ifelse(grepl("After", dat_chase$Treatment), "2_After", "1_Before")
 
-dat_chase$inter_type <- "Chase"
+dat_chase$inter_type <- "2_Chase"
 
 dat_interaction <- rm_outlier_amp[rm_outlier_amp$Treatment %in% c("After_interaction", "Before_interaction"), ]
 
 
-dat_interaction$inter_treatment <- ifelse(grepl("After", dat_interaction$Treatment), "After", "Before")
-dat_interaction$inter_type <- "Perch_interaction"
+dat_interaction$inter_treatment <- ifelse(grepl("After", dat_interaction$Treatment), "2_After", "1_Before")
+dat_interaction$inter_type <- "1_Perch_interaction"
+
 
 # fix range of non-calibrated recs
 dat_interaction$cal.spl[dat_interaction$year < 2021] <- dat_interaction$cal.spl[dat_interaction$year < 2021] + mean(dat_interaction$cal.spl[dat_interaction$year == 2021]) - mean(dat_interaction$cal.spl[dat_interaction$year < 2021])
@@ -770,9 +780,13 @@ dat_aggresive_inter$cal.spl[dat_aggresive_inter$sound.files == dat_aggresive_int
 # model SPL by interaction
 interaction_formulas <- c("cal.spl ~ 1", "cal.spl ~ inter_treatment", "cal.spl ~ inter_treatment + inter_type", "cal.spl ~ inter_treatment * inter_type")
 
+# dat_aggresive_inter$inter_treatment <- factor(dat_aggresive_inter$inter_treatment, levels = c("After", "Before"))
+
+# dat_aggresive_inter$inter_type <- factor(dat_aggresive_inter$inter_type, levels = c("Perch interaction", "Chase"))
+
 inter_mods <- pblapply(interaction_formulas, function(x){
   
-  replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID + songtype, data = dat_aggresive_inter, verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
+  replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID, data = dat_aggresive_inter, verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
   
 })
 
@@ -806,18 +820,19 @@ best_mod_interaction <- inter_mods[[which(names(inter_mods) == row.names(model_s
 sm_interaction <- as.data.frame(summary(best_mod_interaction)$solutions[, -5])
 
 sm_interaction
+
 ```
 
 ```{r SPL vs interaction plot, fig.height=10, fig.width=16}
 
 # subset data
-dat_aggresive_inter$inter_treatment <- factor(dat_aggresive_inter$inter_treatment, levels = c("Before", "After"))
+# dat_aggresive_inter$inter_treatment <- factor(dat_aggresive_inter$inter_treatment, levels = c("1_Before", "2_After"))
 
 dat_aggresive_inter$year <- factor(dat_aggresive_inter$year, levels = c("2013", "2014", "2019", "2021"))
 
-dat_aggresive_inter$inter_type <- gsub("_", " ", dat_aggresive_inter$inter_type)
+# dat_aggresive_inter$inter_type <- gsub("_", " ", dat_aggresive_inter$inter_type)
   
-dat_aggresive_inter$inter_type <- factor(dat_aggresive_inter$inter_type, levels = c("Perch interaction", "Chase"))
+# dat_aggresive_inter$inter_type <- factor(dat_aggresive_inter$inter_type, levels = c("1_Perch_interaction", "2_Chase"))
 
 agg_aggresive_inter <- aggregate(cal.spl ~ ID + inter_type + inter_treatment + year, data = dat_aggresive_inter, mean)
 
@@ -837,19 +852,66 @@ ggplot(dat_aggresive_inter, aes(x = inter_treatment, y = cal.spl)) +
 Effect size posterior distribution
 ```{r Effect size posterior distribution interactions, eval = TRUE, fig.height=10}
 
-# simplify names
-colnames(best_mod_interaction$Sol) <- c("Intercept", "After vs before interaction", "Chase vs perch_interaction", "After vs before chase")
+# extract mcmcs
+mcmcs <- best_mod_interaction$Sol
 
-# stack posteriors
-Y <- stack(as.data.frame(best_mod_interaction$Sol[, -1]))
+# make empty list
+mcmc_l <- list()
+
+##  perch interaction before playback
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"], treatment = "Before", type = "Perch interaction")
+
+##  perch interaction after playback
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + mcmcs[,"inter_treatment2_After"], treatment = "After", type = "Perch interaction"
+)
+
+# chase before playback
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl =  mcmcs[,"(Intercept)"] + 
+  mcmcs[,"inter_type2_Chase"], treatment = "Before", type = "Chase"
+)
+
+# chase after playback
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + 
+  mcmcs[,"inter_type2_Chase"] +
+  mcmcs[, "inter_treatment2_After:inter_type2_Chase"], treatment = "After", type = "Chase")
+
+mcmc_df <- do.call(rbind, mcmc_l)
+colnames(mcmc_df)[1] <- "spl" 
+
+mcmc_df$treatment_type <- paste(mcmc_df$treatment, mcmc_df$type, sep = "-")
+
+# p-values
+combs <- combn(x = unique(mcmc_df$treatment_type), m = 2)[, c(1, 6)]
+
+
+pvals_l <- lapply(1:ncol(combs), function(x){
+  
+  mcmc1 <- mcmc_df$spl[mcmc_df$treatment_type == combs[1, x]]
+  mcmc2 <- mcmc_df$spl[mcmc_df$treatment_type == combs[2, x]]
+  p <- if (mean(mcmc2) > mean(mcmc1))
+  sum(mcmc1  > mcmc2) / length(mcmc1) else
+    sum(mcmc2  > mcmc1) / length(mcmc1)
+  
+  out <- data.frame(mcmc1 =  combs[1, x], mcmc2 = combs[2, x], p = p)
+  
+  return(out)
+})
+
+pvals <- do.call(rbind, pvals_l)
+
+mcmc_df$treatment <-factor(mcmc_df$treatment, levels = c("Before", "After"))
+mcmc_df$type <-factor(mcmc_df$type, levels = c("Perch interaction", "Chase"))
 
 # plot posteriors
-ggplot(Y, aes(y=values, x = ind)) + 
-  geom_hline(yintercept = 0, col = "red", lty = 2) +
+ggplot(mcmc_df, aes(y=spl, x = treatment)) + 
+  # geom_hline(yintercept = 0, col = "red", lty = 2) +
  geom_violin(color = "gray40", fill = viridis(n = 1, alpha = 0.25, begin = 0.4)) +
-  labs(y = "Effect size posterior distribution",x = "Predictor") +
+  labs(y = "SPL posterior distribution",x = "Predictor") +
   theme_classic(base_size = 24) +
+  facet_wrap(~ type) +
   theme(axis.text.x = element_text(angle = 45,  vjust = 0.9, hjust=1)) 
+
+kable(pvals)
 
 ```
 
@@ -857,9 +919,12 @@ ggplot(Y, aes(y=values, x = ind)) +
 <div class="alert alert-info">
 
  - Male-male aggressive interactions result in a significant SPL increase
- - Chases have a stronger effect, increasing SPL in ~ 4 dB compare to regular singing before the chase
+ - Chase effect cannot be compare against perch interactions as not all recordings were calibrated
 
 </div>
+
+
+---
 
 # SPL and song structure
 
@@ -868,9 +933,10 @@ Song structure measured as spectrographic consistency and gap duration
 ## Song spectrographic consistency
 
 - spectrographic consistency: mean spectrographic cross-correlation of all songs in a singing bout
+- Recordings from interactions were used as they showed the highest increase in SPL
 - Spectrographic consistency was measured for all songs within contexts (before & after interaction, clumping chase and perch interactions)
 - Spectrographic consistency was compared between the contexts
-- Recordings from interactions were used as they showed the highest increase in SPL
+
 
 
 1. interaction as predictor and spectrographic consistency as response:
@@ -884,10 +950,10 @@ $$consistency \sim + 1 + (1 | individual) + (1 | song\ type)$$
 
 ```{r SPL vs song consistency subset data, eval = TRUE}
 
-agg_amp_inter <- aggregate(cal.spl ~ ID + inter_type, data = dat_aggresive_inter[dat_aggresive_inter$inter_treatment == "After",], mean)  
+agg_amp_inter <- aggregate(cal.spl ~ ID + inter_type, data = dat_aggresive_inter[dat_aggresive_inter$inter_treatment == "2_After" & dat_aggresive_inter$extsn != "mp3",], mean)  
 
 agg_amp_inter$amp.change <- agg_amp_inter$cal.spl -  
-aggregate(cal.spl ~ ID + inter_type, data = dat_aggresive_inter[dat_aggresive_inter$inter_treatment == "Before",], mean)$cal.spl  
+aggregate(cal.spl ~ ID + inter_type, data = dat_aggresive_inter[dat_aggresive_inter$inter_treatment == "1_Before" & dat_aggresive_inter$extsn != "mp3",], mean)$cal.spl  
 
 # sort by change
 agg_amp_inter <- agg_amp_inter[order(agg_amp_inter$amp.change, decreasing = TRUE), ]
@@ -977,9 +1043,9 @@ model_selection
 # summary
 best_mod_song_consistency <- song_consistency_mods[[which(names(song_consistency_mods) == row.names(model_selection)[1])]][[1]]
 
-sm_song_consistency <- as.data.frame(summary(best_mod_song_consistency)$solutions[, -5])
+sm_song_consistency <- as.data.frame(summary(best_mod_song_consistency)$solutions)
 
-sm_song_consistency
+sm_song_consistency[,- 5]
 ```
 
 ```{r SPL vs song consistency plot, fig.height=10, fig.width=16}
@@ -997,12 +1063,11 @@ ggplot(dat_song_consistency, aes(x = mean.spl, y = xcrr)) +
 
 ```
 
-Effect size posterior distribution
-```{r Effect size posterior distribution song consistency, eval = TRUE, fig.height=10}
+```{r Effect size posterior distribution song consistency, eval = FALSE, fig.height=10}
 
 # stack posteriors
-Y <- stack(as.data.frame(best_mod_song_consistency$Sol[, -1]))
-Y$ind <- "mean.spl"
+Y <- stack(as.data.frame(best_mod_song_consistency$Sol))
+# Y$ind <- "mean.spl"
 
 # plot posteriors
 ggplot(Y, aes(y=values, x = ind)) + 
@@ -1023,7 +1088,8 @@ ggplot(Y, aes(y=values, x = ind)) +
 
 ## Song gap duration
 
-Gaps: silent time intervals between songs
+-Gaps: silent time intervals between songs
+- Mean SPL has been mean-centered to facilitate interpretation
 
 1. interaction as predictor and gap duration as response:
 $$gap\ duration \sim + interaction + (1 | individual) + (1 | song\ type)$$
@@ -1038,8 +1104,10 @@ $$gap\ duration \sim + 1 + (1 | individual) + (1 | song\ type)$$
 
 dat_gaps <- readRDS("./output/dat_song_spectrographic_consistency_and_gaps.RDS")
 
+dat_gaps$mean.spl <- mean(dat_gaps$mean.spl) - dat_gaps$mean.spl 
+
 # model SPL by body size
-gap_formulas <- c("mean.gaps ~ 1", "mean.gaps ~ inter_treatment", "mean.gaps ~ inter_treatment + mean.spl", "mean.gaps ~ inter_treatment * mean.spl" , "mean.gaps ~ mean.spl")
+gap_formulas <- c("mean.gaps ~ 1", "mean.gaps ~ treatment", "mean.gaps ~ treatment + mean.spl", "mean.gaps ~ treatment * mean.spl" , "mean.gaps ~ mean.spl")
 
 gap_mods <- pblapply(gap_formulas, function(x){
   
@@ -1095,7 +1163,7 @@ ggplot(dat_gaps, aes(x = mean.gaps, y = xcrr)) +
 ```
 
 Effect size posterior distribution
-```{r Effect size posterior distribution gaps, eval = TRUE, fig.height=10}
+```{r Effect size posterior distribution gaps, eval = FALSE, fig.height=10}
 
 # stack posteriors
 Y <- stack(as.data.frame(best_mod_gap$Sol[, -1]))
@@ -1118,6 +1186,68 @@ ggplot(Y, aes(y=values, x = ind)) +
   theme(axis.text.x = element_text(angle = 45,  vjust = 0.9, hjust=1)) 
 
 ```
+
+```{r Effect size posterior distribution gaps MCMC, eval = FALSE, fig.height=10}
+
+# extract mcmcs
+mcmcs <- best_mod_gap$Sol
+
+# make empty list
+mcmc_l <- list()
+
+## after interaction 0 spl
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"], treatment = "After", type = "0 spl")
+
+## before interaction 0 spl
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + mcmcs[, "treatmentBefore"], treatment = "Before", type = "0 spl")
+
+
+## before interaction 1 spl
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + mcmcs[, "treatmentBefore"] + mcmcs[,"mean.spl"], treatment = "Before", type = "1 spl")
+
+## after interaction 1 spl
+mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + mcmcs[,"mean.spl"], treatment = "After", type = "1 spl")
+
+mcmc_df <- do.call(rbind, mcmc_l)
+colnames(mcmc_df)[1] <- "spl" 
+
+mcmc_df$treatment_type <- paste(mcmc_df$treatment, mcmc_df$type, sep = "-")
+
+# p-values
+combs <- combn(x = unique(mcmc_df$treatment_type), m = 2)
+
+
+pvals_l <- lapply(1:ncol(combs), function(x){
+  
+  mcmc1 <- mcmc_df$spl[mcmc_df$treatment_type == combs[1, x]]
+  mcmc2 <- mcmc_df$spl[mcmc_df$treatment_type == combs[2, x]]
+  p <- if (mean(mcmc2) > mean(mcmc1))
+  sum(mcmc1  > mcmc2) / length(mcmc1) else
+    sum(mcmc2  > mcmc1) / length(mcmc1)
+  
+  out <- data.frame(mcmc1 =  combs[1, x], mcmc2 = combs[2, x], p = p)
+  
+  return(out)
+})
+
+pvals <- do.call(rbind, pvals_l)
+
+mcmc_df$treatment <-factor(mcmc_df$treatment, levels = c("Before", "After"))
+mcmc_df$type <-factor(mcmc_df$type, levels = c("Perch interaction", "Chase"))
+
+# plot posteriors
+ggplot(mcmc_df, aes(y=spl, x = treatment)) + 
+  # geom_hline(yintercept = 0, col = "red", lty = 2) +
+ geom_violin(color = "gray40", fill = viridis(n = 1, alpha = 0.25, begin = 0.4)) +
+  labs(y = "SPL posterior distribution",x = "Predictor") +
+  theme_classic(base_size = 24) +
+  facet_wrap(~ type) +
+  theme(axis.text.x = element_text(angle = 45,  vjust = 0.9, hjust=1)) 
+
+kable(pvals)
+
+```
+
 
 <div class="alert alert-info">
 
