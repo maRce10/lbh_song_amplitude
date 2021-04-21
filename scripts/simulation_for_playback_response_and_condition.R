@@ -1,5 +1,7 @@
 # simulate data in which resposne to playback is mediated by body size
 
+library(lmer)
+
 indivs <- 30
 size <- rnorm(indivs, mean = 0, sd = 1)
 reps <- 20

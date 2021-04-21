@@ -29,8 +29,7 @@ editor_options:
 
 # Next steps
 
-- check if magnitude of response to treatments in significant models is explained by body size of lifting power
-
+- 
 
 </div>
 
