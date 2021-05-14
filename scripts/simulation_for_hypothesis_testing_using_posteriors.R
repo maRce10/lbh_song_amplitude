@@ -2,12 +2,12 @@
 
 library(MCMCglmm)
 library(cowplot)
+library(ggplot2)
+library(viridis)
 
 # two factors:  1) when and 2) how much
-
-how_much <- sample(c("1_low", "2_high"), indivs, replace = TRUE)
 indivs <- 30
-size <- rnorm(indivs, mean = 0, sd = 1)
+how_much <- sample(c("1_low", "2_high"), indivs, replace = TRUE)
 reps <- 20
 interaction <- TRUE
 sig_effect <- TRUE
@@ -45,6 +45,8 @@ table(sim_dat$how.much, sim_dat$when)
 gg_raw <- ggplot(sim_dat, aes(x = when, y = val, color = how.much)) + 
   geom_violin()
 
+gg_raw
+
 md_sig <- MCMCglmm(val ~ how.much + when + how.much:when, random = ~ ID, data = sim_dat, verbose = FALSE)
 summary(md_sig)
 
@@ -63,7 +65,7 @@ mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + mcmcs[,
 # after low
 mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + mcmcs[,"when2_after"], when = "2_after", how.much = "1_low")
 
-# chase after playback
+# after high
 mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] + 
                                              mcmcs[,"when2_after"] + 
                                              mcmcs[,"how.much2_high"] +
@@ -72,10 +74,39 @@ mcmc_l[[length(mcmc_l) + 1]] <- data.frame(spl = mcmcs[,"(Intercept)"] +
 mcmc_df <- do.call(rbind, mcmc_l)
 colnames(mcmc_df)[1] <- "val" 
 
-# gg_mcmc <- ggplot(mcmc_df, aes(x = when, y = val, color = how.much)) + 
-#   scale_fill_viridis() +
-#   geom_violin()
-# 
+ggplot(mcmc_df, aes(x = when, y = val, color = how.much)) +
+  scale_fill_viridis() +
+  geom_violin()
+
+# 2nd way to extract posterior distributions
+md_sig2 <- MCMCglmm(val ~ how.much:when - 1, random = ~ ID, data = sim_dat, verbose = FALSE)
+summary(md_sig2)
+
+# extract mcmcs
+mcmcs2 <- md_sig2$Sol
+
+# make empty list
+mcmc_l2 <- list()
+
+for (i in 1:ncol(mcmcs2))
+  mcmc_l2[[length(mcmc_l2) + 1]] <- data.frame(val = mcmcs2[, i], when_how_much = colnames(mcmcs2)[i])
+
+mcmc_df2 <- do.call(rbind, mcmc_l2)
+colnames(mcmc_df2)[1] <- "val" 
+mcmc_df2$when <- ifelse(grepl("before", mcmc_df2$when_how_much), "1_before", "2_after")
+mcmc_df2$how.much <- ifelse(grepl("low", mcmc_df2$when_how_much), "1_low", "2_high")
+mcmc_df2$when_how_much <- NULL
+
+mcmc_df2$method <- "without_intrcpt"
+mcmc_df$method <- "with_intrcpt"
+
+mcmc_df2 <- rbind(mcmc_df, mcmc_df2)
+
+ggplot(mcmc_df2, aes(x = when, y = val, color = how.much, fill = method)) +
+  scale_fill_viridis_d() +
+  geom_violin()
+
+
 # cowplot::plot_grid(gg_raw,gg_mcmc)
 sim_dat$data <- "raw"
 mcmc_df$data <- "mcmc"

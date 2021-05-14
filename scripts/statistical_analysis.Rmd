@@ -372,27 +372,39 @@ ggplot(Y, aes(y=values, x = ind)) +
 
 ---
 
-# SPL vs condition
+# SPL vs condition and habitat structure
 
 - Only for individuals recorded in the morning (afternoon recordings were excluded)
-- Condition parameters: body size (PC1 from a PCA on total culmen, flattened wing length, body mass and central rectrix) and lifting power
+- Condition parameters: body size (PC1 from a PCA on total culmen, flattened wing length, body mass and central rectrix), lifting power and vegetation density
 
 1. Body size as predictor:
 $$SPL \sim + body\ size + (1 | individual) + (1 | song\ type)$$
 1. Lifting power as predictor:
 $$SPL \sim + lifting\ power + (1 | individual) + (1 | song\ type)$$
+1. Vegetation density as predictor:
+$$SPL \sim + vegetation\ density + (1 | individual) + (1 | song\ type)$$
+1. Body size and vegetation density as predictors:
+$$SPL \sim  + body\ size + vegetation\ density + (1 | individual) + (1 | song\ type)$$
+1. Lifting power and vegetation density as predictors:
+$$SPL \sim + lifting\ power + vegetation\ density + (1 | individual) + (1 | song\ type)$$
+
 1. Lifting power and body size as predictors:
 $$SPL \sim + lifting\ power + body\ size +  (1 | individual) + (1 | song\ type)$$
+1. Lifting power, body size and vegetation density as predictors:
+$$SPL \sim + lifting\ power + body\ size + vegetation\ density +  (1 | individual) + (1 | song\ type)$$
+
 1. Interaction of lifting power and body size as predictor:
 $$SPL \sim + lifting\ power * body\ size +  (1 | individual) + (1 | song\ type)$$
 
+1. Interaction of lifting power, body size and vegetation density as predictor:
+$$SPL \sim + lifting\ power * body\ size * vegetation\ density +  (1 | individual) + (1 | song\ type)$$
 1. Null model with no predictor (intercept only):
 $$SPL \sim + 1 + (1 | individual) + (1 | song\ type)$$
 
 ### Correlation between body size parameters included in the PCA
 
 ```{r SPL vs condition, eval = TRUE}
-caps <- read_excel("/home/m/Dropbox/LBH data/Additional data files/LBH captures data.xlsx")
+caps <- read_excel("./data/raw/LBH captures data.xlsx")
 
 # same variables as in paper on spatial memory and body size  
 size_vars <- caps[caps$`Bird ID` %in% amp$ID, c("Bird ID", "Total culmen", "Flattened wing length", "Weight", "Central rectriz")]
@@ -406,6 +418,7 @@ cor(size_vars[, c("Total culmen", "Flattened wing length", "Weight", "Central re
 ### Variance explained by each PC
 
 ```{r SPL vs condition 2, eval = TRUE}
+
 mean_size <- aggregate(. ~ `Bird ID`, data = size_vars, FUN = mean, na.action = "na.omit")
 
 pca <- prcomp(mean_size[, c("Total culmen", "Flattened wing length", "Weight", "Central rectriz")], scale. = TRUE)
@@ -419,8 +432,9 @@ rm_outlier_amp$PC1 <- sapply(1:nrow(rm_outlier_amp), function(x) mean_size$PC1[m
 
 rm_outlier_amp$weight <- sapply(1:nrow(rm_outlier_amp), function(x) mean_size$Weight[mean_size$`Bird ID` == rm_outlier_amp$ID[x]][1])
 
+
 ### add weight lifted
-lift <- read_excel("/home/m/Dropbox/LBH data/Morphology-condition/other files/Uplift power experiment.xlsx", sheet = "Results")
+lift <- read_excel("./data/raw/Uplift power experiment.xlsx", sheet = "Results")
 
 rm_outlier_amp$lift.weight <- sapply(1:nrow(rm_outlier_amp), function(x){
   
@@ -442,18 +456,32 @@ rm_outlier_amp$lift.weight <- sapply(1:nrow(rm_outlier_amp), function(x){
   return(weight)
 })
 
+
+# read vegetation density
+veg <- read_excel(path = "./data/raw/Vegetation_density_lbh.xlsx")
+
+veg$mean_count <- apply(veg[, c("N", "S", "W", "E")], 1, mean, na.rm = TRUE) 
+
+# divide by 16 (max number of lines on pole)
+veg$veg_density <- 1 - veg$mean_count / 16
+
+agg_veg <- aggregate(veg_density ~ ID, veg, mean)
+
+rm_outlier_amp$veg_density <- sapply(1:nrow(rm_outlier_amp), function(x) agg_veg$veg_density[agg_veg$ID == as.numeric(rm_outlier_amp$ID[x])][1])
+
+
 ```
 
-```{r SPL vs body condition models, eval = FALSE}
+```{r SPL vs body condition and vegetation models, eval = FALSE}
 
 # subset data
 body_size_data <- rm_outlier_amp[rm_outlier_amp$Treatment == "Regular_singing" & rm_outlier_amp$year == 2021 & !is.na(rm_outlier_amp$PC1) & !is.na(rm_outlier_amp$lift.weight) & rm_outlier_amp$period == "morning", ]
 
 # model SPL by body condition
-size_formulas <- c("cal.spl ~ 1", "cal.spl ~ PC1", "cal.spl ~ lift.weight", "cal.spl ~ lift.weight + PC1", "cal.spl ~ lift.weight *  PC1")
+size_formulas <- c("cal.spl ~ 1", "cal.spl ~ PC1", "cal.spl ~ lift.weight", "cal.spl ~ lift.weight + PC1", "cal.spl ~ lift.weight *  PC1", "cal.spl ~ veg_density", "cal.spl ~ PC1 + veg_density", "cal.spl ~ lift.weight + veg_density", "cal.spl ~ lift.weight + PC1 + veg_density", "cal.spl ~ lift.weight *  PC1 * veg_density")
 
 
-size_mods <- pblapply(size_formulas, function(x){
+size_mods <- pblapply(size_formulas, cl = 8, function(x){
   
   replicate(n = 3, MCMCglmm(as.formula(x), random = ~ ID + songtype, data = body_size_data, verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE)), simplify = FALSE)
   
@@ -461,6 +489,15 @@ size_mods <- pblapply(size_formulas, function(x){
 
 names(size_mods) <- gsub("cal.spl ~ ", "", size_formulas)
 saveRDS(list(size_formulas = size_formulas, size_mods = size_mods), "./output/mcmcglmm_size_models.RDS")
+
+# how predictors covary
+# body_size_sub <- body_size_data[!duplicated(body_size_data$lift.weight), ]
+# 
+# cor(body_size_sub[, c("lift.weight", "veg_density", "PC1", "weight")])
+# 
+# md <- MCMCglmm(veg_density ~ lift.weight + PC1 + weight, random = ~ lek, data = body_size_sub, verbose = FALSE, nitt = itrns,  start = list(QUASI = FALSE))
+# 
+# summary(md)
 
 ```
 
@@ -475,7 +512,9 @@ names(mod_list) <- gsub("cal.spl ~ ", "", size_formulas)
 
 model_selection <- model.sel(mod_list, rank="DIC")
 
-model_selection
+model_selection <- as.data.frame(model_selection)
+
+model_selection[, grep("(Intercept)|family|df|DIC|logLik", names(model_selection), invert = TRUE)]
 
 ```
 
@@ -745,12 +784,13 @@ $$SPL \sim + interaction * interaction\ type + (1 | individual)$$
 1. Null model with no predictor (intercept only):
 $$SPL \sim + 1 + (1 | individual)$$
 
+* *Interactions from videos were omitted*
+
 ```{r SPL vs interaction models subset data, eval = TRUE}
 # subset data
 dat_chase <- rm_outlier_amp[rm_outlier_amp$org.sound.file %in% rm_outlier_amp$org.sound.file[rm_outlier_amp$Treatment == "After_chase"], ]
 
 dat_chase <- dat_chase[dat_chase$Treatment %in% c("Regular_singing", "After_chase"),]
-
 
 dat_chase$inter_treatment <- ifelse(grepl("After", dat_chase$Treatment), "2_After", "1_Before")
 
@@ -778,6 +818,9 @@ dat_aggresive_inter$cal.spl[dat_aggresive_inter$sound.files == dat_aggresive_int
 
 # model SPL by interaction
 interaction_formulas <- c("cal.spl ~ 1", "cal.spl ~ inter_treatment", "cal.spl ~ inter_treatment + inter_type", "cal.spl ~ inter_treatment * inter_type")
+
+# remove video data
+dat_aggresive_inter <- dat_aggresive_inter[grep("2013|2014", dat_aggresive_inter$sound.files, invert = TRUE),]
 
 # dat_aggresive_inter$inter_treatment <- factor(dat_aggresive_inter$inter_treatment, levels = c("After", "Before"))
 
@@ -901,9 +944,12 @@ pvals <- do.call(rbind, pvals_l)
 mcmc_df$treatment <-factor(mcmc_df$treatment, levels = c("Before", "After"))
 mcmc_df$type <-factor(mcmc_df$type, levels = c("Perch interaction", "Chase"))
 
+agg <- aggregate(spl ~ type + treatment, mcmc_df, mean)
+
 # plot posteriors
 ggplot(mcmc_df, aes(y=spl, x = treatment)) + 
-  # geom_hline(yintercept = 0, col = "red", lty = 2) +
+  geom_point(data = agg) +
+  # geom_line(data = agg, stat = "identity") +
  geom_violin(color = "gray40", fill = viridis(n = 1, alpha = 0.25, begin = 0.4)) +
   labs(y = "SPL posterior distribution",x = "Predictor") +
   theme_classic(base_size = 24) +
