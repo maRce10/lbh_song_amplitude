@@ -29,7 +29,9 @@ editor_options:
 
 # Next steps
 
-- 
+- Make analysis for vegetation density
+- Change randome slope analysis with absolute differences in before and after treatments (both in interactions and coordinations)
+-See if eliminating interaction videos allows a cleaner analysis (leave only calibrated songs)
 
 </div>
 
@@ -40,7 +42,7 @@ editor_options:
 ```{r Load packages, eval = TRUE, message=FALSE, warning = FALSE}
 
 ## vector with package names
-x <- c( "pbapply", "parallel", "ggplot2", "warbleR", "Rraven", "viridis", "readxl", "rptR", "MCMCglmm", "MuMIn", "corrplot", "lme4", "grid", "gridExtra")
+x <- c( "pbapply", "parallel", "ggplot2", "warbleR", "Rraven", "viridis", "readxl", "rptR", "MCMCglmm", "MuMIn", "corrplot", "lme4", "grid", "gridExtra", "dynaSpec")
 
 aa <- lapply(x, function(y) {
   
@@ -145,6 +147,7 @@ mcmc_diagnostics <- function(rep_mods_list){
 
 amp <- read.csv("./output/calibrated_amplitude_all_songs.csv")
 amp$Treatment[amp$Treatment == "Regular_sining"] <- "Regular_singing"
+
 ```
 
 # Repeatability
@@ -231,6 +234,45 @@ repts_df$range <- repts_df$hiCI - repts_df$lowCI
 repts_df <- repts_df[order(repts_df$repeatability, decreasing = TRUE), ]
 
 kable(head(repts_df))
+
+```
+
+
+```{r repetability plot for presentation}
+
+# keep only morning recs, only regular singing and only from 2021
+amp_morn <- amp[amp$period == "morning" & amp$year == 2021 & amp$Treatment == "Regular_singing", ]
+# keep only males recorded at least twice 
+# count_sf <- table(amp_morn$ID[!duplicated(amp_morn$org.sound.file)])
+
+amp_morn_rep <- amp_morn[amp_morn$ID %in% names(count_sf)[count_sf > 1], ]
+
+amp_morn_rep <- amp_morn
+
+quant_subet <- lapply(unique(amp_morn_rep$org.sound.file), function(y){
+    X <- amp_morn_rep[amp_morn_rep$org.sound.file == y, ]
+    
+    # remove outliers
+    outlier_quant <- quantile(X$cal.spl, c(0.1, 1- 0.1))
+  
+    X <- X[X$cal.spl >= outlier_quant[1],]
+    
+    # quantlie for each max quantile
+    quant <- quantile(X$cal.spl, probs = 1 - 0.4)
+    
+    # subset
+   X <- X[X$cal.spl >= quant, ]
+  })
+  
+quant_subet <- do.call(rbind, quant_subet)
+  
+ggplot(quant_subet, aes(x = factor(ID), y = cal.spl, width = 2)) +
+  geom_violin(fill = viridis(10)[8])+
+  theme_classic(base_size = 30) +
+  labs(x = "Individual", y = "Sound pressure level (dB)") +
+   theme(axis.text.x = element_text(angle = 90))
+
+# ggsave("./output/individual_differences_in_spl.jpeg", width = 14, height = 7)
 
 ```
 
@@ -501,20 +543,26 @@ agg_size$count <- aggregate(PC1 ~ ID, data = body_size_data, length)$PC1
 
 
 ggplot(agg_size, aes(x = PC1, y = cal.spl)) +
-    geom_jitter(position = position_jitter(width = 0.2, height = 0.2), aes(size = count)) +
-  labs(x = "Body size (PC1)", y = "Sound pressure level (dB)", color = "Period", size = "Sample size") +
-  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
-  theme_classic(base_size = 24) + 
+    geom_jitter(position = position_jitter(width = 0.2, height = 0.2), aes(size = count), color = viridis(10)[1]) +
+  labs(x = "Body size (PC1)", y = "Sound pressure level (dB)", color = "Period", size = "Sample\n size") +
+  # scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
+  theme_classic(base_size = 30) 
   # geom_abline(slope = c(ES_continious = sm_size[2, 1], ES_continious_plus_ES_interaction=  sm_size[2, 1] + sm_size[4, 1]), intercept = c(intercept = sm_size[1, 1], intercept_plus_ES_categorical = sm_size[1, 1] + sm_size[3, 1]), color = viridis(2, begin = 0.2, end = 0.8, alpha = 0.6)[2:1], size = 1) +
-guides(colour = guide_legend(override.aes = list(size=8)))
+# guides(colour = guide_legend(override.aes = list(size=8)))
+
+# ggsave("./output/body_size_vs_SPL.jpeg", width = 11, height = 7)
 
 ggplot(agg_size, aes(x = lift.weight, y = cal.spl)) +
-    geom_jitter(position = position_jitter(width = 0.2, height = 0.2), aes(size = count)) +
-  labs(x = "Lifiting power (g)", y = "Sound pressure level (dB)", color = "Period", size = "Sample size") +
-  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
-  theme_classic(base_size = 24) + 
+    geom_jitter(position = position_jitter(width = 0.2, height = 0.2), aes(size = count), color = viridis(10)[1]) +
+  labs(x = "Lifiting power (g)", y = "Sound pressure level (dB)", color = "Period", size = "Sample\n size") +
+  # scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
+  theme_classic(base_size = 30) 
+
   # geom_abline(slope = c(ES_continious = sm_size[2, 1], ES_continious_plus_ES_interaction=  sm_size[2, 1] + sm_size[4, 1]), intercept = c(intercept = sm_size[1, 1], intercept_plus_ES_categorical = sm_size[1, 1] + sm_size[3, 1]), color = viridis(2, begin = 0.2, end = 0.8, alpha = 0.6)[2:1], size = 1) +
-guides(colour = guide_legend(override.aes = list(size=8)))
+# guides(colour = guide_legend(override.aes = list(size=8)))
+
+# ggsave("./output/lifting_power_vs_SPL.jpeg", width = 11, height = 7)
+
 ```
 
 * Each dot represents the average for a single individual
@@ -629,6 +677,20 @@ ggplot(agg_playback, aes(x = Treatment, y = cal.spl, color = Treatment)) +
   facet_wrap(~ ID, nrow = 3, scales = "free_y") +
   theme_classic(base_size = 24)
 
+sub_agg <- agg_playback[agg_playback$ID %in% unique(agg_playback$ID)[1:8],]
+sub_agg$ID <- substr(sub_agg$ID, 0, 3)
+
+ggplot(sub_agg, aes(x = Treatment, y = cal.spl, color = Treatment)) +
+  geom_point(size = 4) +
+   geom_errorbar(width=.3, aes(ymin = cal.spl - sd, ymax = cal.spl + sd), show.legend = FALSE, lwd = 2) +
+  labs(x = "Playback treatment", y = "Sound pressure level (dB)", color = "Period") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 1) +
+  facet_wrap(~ ID, nrow = 2, scales = "free_y") +
+  theme_classic(base_size = 30) + 
+  theme(axis.text.x = element_blank())
+
+# ggsave("./output/SPL_by_playback.jpeg", width = 14, height = 7)
+
 ```
 
 
@@ -705,12 +767,25 @@ agg_coord$Treatment <- factor(ifelse(agg_coord$Treatment == "Coordination", "Coo
 ggplot(agg_coord, aes(x = Treatment, y = cal.spl, color = Treatment)) +
   geom_point(size = 2, show.legend = FALSE) +
    geom_errorbar(width=.05, aes(ymin = cal.spl - sd, ymax = cal.spl + sd), show.legend = FALSE) +
- 
   labs(x = "coord treatment", y = "Sound pressure level (dB)", color = "Period") +
   scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 1) +
   facet_wrap(~ ID, nrow = 2, scales = "free_y") +
   theme_classic(base_size = 24)
 
+
+sub_agg <- agg_coord[agg_coord$ID %in% unique(agg_coord$ID)[c(1:4, 11:8)],]
+sub_agg$ID <- substr(sub_agg$ID, 0, 3)
+
+ggplot(sub_agg, aes(x = Treatment, y = cal.spl, color = Treatment)) +
+  geom_point(size = 4, show.legend = TRUE) +
+   geom_errorbar(width=.3, aes(ymin = cal.spl - sd, ymax = cal.spl + sd), show.legend = FALSE, lwd = 2) +
+  labs(x = "Singing type", y = "Sound pressure level (dB)", color = "Singing type") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 1) +
+  facet_wrap(~ ID, nrow = 2, scales = "free_y") +
+  theme_classic(base_size = 30)  + 
+  theme(axis.text.x = element_blank())
+
+# ggsave("./output/SPL_by_coordination.jpeg", width = 14, height = 7)
 ```
 
 - The random slope model is significantly better than the random intercept model (p = `r 
@@ -845,6 +920,25 @@ ggplot(dat_aggresive_inter, aes(x = inter_treatment, y = cal.spl)) +
   facet_wrap(~ inter_type) +
   scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 0.7) +
   theme_classic(base_size = 24) 
+
+
+agg_dat_agg <- aggregate(cal.spl ~ inter_treatment + inter_type, data = dat_aggresive_inter, mean)
+agg_dat_agg$sd <- aggregate(cal.spl ~ inter_treatment + inter_type, data = dat_aggresive_inter, sd)$cal.spl
+
+agg_dat_agg$inter_treatment <- factor(substr(agg_dat_agg$inter_treatment, 3, 100), levels = substr(agg_dat_agg$inter_treatment, 3, 100)[1:2])
+
+ggplot(agg_dat_agg, aes(x = inter_treatment, y = cal.spl, color = inter_treatment)) +
+  geom_point(size = 4, show.legend = FALSE) +
+   geom_errorbar(width=.3, aes(ymin = cal.spl - sd, ymax = cal.spl + sd), show.legend = FALSE, lwd = 2) +
+  labs(x = "Period", y = "Sound pressure level (dB)") +
+  scale_color_viridis_d(begin = 0.1, end = 0.8, alpha = 1) +
+  facet_wrap(~ inter_type, nrow = 1, scales = "free_y", labeller =  labeller(inter_type = 
+    c("1_Perch_interaction" = "Perch interaction",
+      "2_Chase" = "Chase"))) +
+  theme_classic(base_size = 30)
+
+
+# ggsave("./output/interaction_vs_SPL.jpeg", width = 11, height = 5.8)
 
 ```
 
@@ -1295,6 +1389,76 @@ mcmc_diagnostics(song_consistency_mods)
 ```{r diagnostic MCMCglmm SPL and duration, eval = TRUE, echo = TRUE, fig.height= 3, fig.width=12}
 
 mcmc_diagnostics(gap_mods)
+
+```
+
+
+```{r dynamic spectrogram, eval = FALSE}
+
+wv <- readWave("./data/raw/cuts/397_SUR_03-Feb_2021_08.06_10.57_A56-11.wav")
+
+spectro(cutw(wv, from = 1.2,to =  1.6, output = "Wave"), wl = 00, scale = FALSE, ovlp = 95, flim = c(1, 10))
+
+scrolling_spectro(wave = wv, wl = 300, 
+              t.display = 1.7, pal = viridis,  ovlp = 90, 
+              grid = FALSE, flim = c(1, 9), colbg = "black", 
+              width = 1000, height = 500,  collevels = seq(-50, 0, 5), 
+              res = 120, file.name = "397_SUR_03-Feb_2021_08.06_10.57_A56-11_v2.mp4")
+
+scrolling_spectro(wave = wv, wl = 300, speed = 0.5,
+              t.display = 1.7, pal = viridis,  ovlp = 90, 
+              grid = FALSE, flim = c(1, 9), colbg = "black", 
+              width = 1000, height = 500,  collevels = seq(-50, 0, 5), 
+              res = 120, file.name = "397_SUR_03-Feb_2021_08.06_10.57_A56-11_v3.mp4")
+
+scrolling_spectro(wave = wv, wl = 300, 
+    t.display = 1.7, ovlp = 90, pal = magma, 
+    grid = FALSE, flim = c(1, 10), width = 1000, 
+    height = 500, res = 120, collevels = seq(-40, 0, 5), 
+    file.name = "397_SUR_03-Feb_2021_08.06_10.57_A56-11_v4.mp4", colbg = "black", 
+    speed = 0.2, axis.type = "none", loop = 3)
+
+
+data("Phae.long4")
+
+scrolling_spectro(wave = Phae.long4, wl = 300, 
+    t.display = 1.7, ovlp = 90, pal = magma, 
+    grid = FALSE, flim = c(1, 10), width = 1000, 
+    height = 500, res = 120, collevels = seq(-50, 0, 5), 
+    file.name = "no_axis_short.mp4", colbg = "black", 
+    speed = 1, axis.type = "none", loop = 3)
+
+scrolling_spectro(wave = Phae.long4, wl = 300, 
+    t.display = 1.7, ovlp = 90, pal = viridis, 
+    grid = FALSE, flim = c(1, 10), width = 1000, 
+    height = 500, res = 120, collevels = seq(-50, 0, 5), 
+    file.name = "no_axis_viridis2.mp4", colbg = "black", 
+    speed = 1, axis.type = "none", loop = 3)
+
+
+scrolling_spectro(wave = wv, wl = 150, 
+    t.display = 1.2, ovlp = 95, pal = magma, 
+    grid = FALSE, flim = c(1, 10), width = 1000, 
+    height = 500, res = 120, collevels = seq(-40, 0, 5), 
+    file.name = "3397_SUR_03-Feb_2021_08.06_10.57_A56-11_v5.mp4", colbg = "black", 
+    speed = 0.5, axis.type = "none", loop = 3)
+
+
+scrolling_spectro(wave = Phae.long4, wl = 300, 
+    t.display = 1.7, ovlp = 90, pal = magma, 
+    grid = FALSE, flim = c(1, 10), width = 1000, 
+    height = 500, res = 120, collevels = seq(-40, 0, 5), 
+    file.name = "Phae.long4.mp4", colbg = "black", 
+    speed = 1, axis.type = "minimal", loop = 3)
+
+Phae.long4.2 <- cutw(Phae.long4, from = 0, to = 2.8, output = "Wave")
+
+scrolling_spectro(wave = Phae.long4.2, wl = 300, 
+    t.display = 1.7, ovlp = 90, pal = viridis, 
+    grid = FALSE, flim = c(1, 10), width = 1000, 
+    height = 500, res = 120, collevels = seq(-40, 0, 5), 
+    file.name = "Phae.long4_viridis.mp4", colbg = "black", 
+    speed = 1, axis.type = "minimal", loop = 5)
 
 ```
 

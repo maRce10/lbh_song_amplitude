@@ -20,7 +20,7 @@ editor_options:
 ```{r Load packages, eval = TRUE, message=FALSE, warning = FALSE}
 
 ## vector with package names
-x <- c( "pbapply", "parallel", "ggplot2", "warbleR", "Rraven", "readxl", "Sim.DiffProc", "png", "baRulho", "viridis")
+x <- c( "pbapply", "parallel", "ggplot2", "warbleR", "Rraven", "readxl", "Sim.DiffProc", "png", "baRulho", "viridis", "sysfonts")
 
 aa <- lapply(x, function(y) {
   
@@ -34,6 +34,8 @@ aa <- lapply(x, function(y) {
 
 knitr::opts_knit$set(root.dir = normalizePath(".."), warnings = FALSE, message = FALSE)
 knitr::opts_chunk$set(warnings = FALSE, message = FALSE)
+
+font_add(family = "Calibri light", regular = "./data/calibril.ttf")
 ```
 
 ```{r, parameters and functions, eval = TRUE}
@@ -469,12 +471,31 @@ ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_a
 
 ```
 
+```{r audiomoth pre calibration for presentation, eval = TRUE}
+
+agg_spl_all$am <- as.character(as.numeric(as.factor(agg_spl_all$sound.files)))
+agg_spl_all$am[agg_spl_all$sound.files == "soundmeter"] <- "soundmeter"
+agg_spl_all$am <- factor(agg_spl_all$am, levels = c("soundmeter", 1:16))
+agg_spl_all$line.size <- ifelse(agg_spl_all$am == "soundmeter", 2, 1)
+
+ggplot(agg_spl_all[agg_spl_all$orig.dB %in% c(0.0316, 0.1, 0.3162, 1), ], aes(x = orig.dB, y = dB, group = am, color = am, size = line.size)) +
+    geom_errorbar(aes(ymin= dB - sd, ymax = dB + sd, color = am),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic(base_size = 30) + labs(x = "Calibration sound SPL (dB)", y = "SPL measured (dB)", color = "") + guides(size = "none")
+
+ggsave("./output/uncalibrated_audiomoth_spl.jpeg", width = 11, height = 7)
+
+```
+
+
+
 ## Calibrating audiomoths using proportional adjustment
 
 Note that this way of calibrating has high and non-randomly distributed error
 
 ```{r audiomoth calibration 3, eval = TRUE}
-
 agg_spl <- read.csv(file.path(calibration.path, "spl_by_audiomoth_calibration_sounds.csv"))
 
 names(agg_spl)[3] <- "dB"
@@ -517,6 +538,7 @@ ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", unique(agg_spl_a
     geom_point(position=pd, size=1) +
   theme_classic() + labs(x = "Calibration sound decrease factor")
 ```
+
 
 ## Calibrating audiomoths using addition of mean amplitude difference compared to soundmeter
 
@@ -574,6 +596,25 @@ ggplot(agg_spl_all[agg_spl_all$sound.files %in% c("soundmeter", "calibration_M_A
   theme_classic() + labs(x = "Calibration sound decrease factor")
 ```
 
+```{r audiomoth calibration 3 for presentation, eval = TRUE}
+
+agg_spl_all$am <- as.character(as.numeric(as.factor(agg_spl_all$sound.files)))
+agg_spl_all$am[agg_spl_all$sound.files == "soundmeter"] <- "soundmeter"
+agg_spl_all$am <- factor(agg_spl_all$am, levels = c("soundmeter", 1:16))
+agg_spl_all$line.size <- ifelse(agg_spl_all$am == "soundmeter", 2, 1)
+
+ggplot(agg_spl_all[agg_spl_all$orig.dB %in% c(0.0316, 0.1, 0.3162, 1), ], aes(x = orig.dB, y = adj_dB, group = am, color = am, size = line.size)) +
+    geom_errorbar(aes(ymin=adj_dB - sd, ymax = adj_dB + sd, color = am),width=.2, position=pd) +
+    geom_line(position=pd) +
+    scale_color_viridis_d() +
+    geom_point(position=pd, size=1) +
+  theme_classic(base_size = 30) + labs(x = "Calibration sound SPL (dB)", y = "SPL measured (dB)", color = "") + guides(size = "none") +
+    theme(text=element_text(size=30,  family="Calibri light"))
+
+
+```
+
+
 ## Error margin after adjusting SPL from audiomoths
 ```{r error margin after adjusting SPL from audiomoths, eval = TRUE}
 agg_spl_all <- agg_spl_all[order(agg_spl_all$sound.files, agg_spl_all$label), ]
@@ -596,7 +637,7 @@ mean_diff_dB <- mean_diff_dB[order(mean_diff_dB$sd.diff), ]
 mean_diff_dB$sound.files <- factor(mean_diff_dB$sound.files, levels = mean_diff_dB$sound.files[order(mean_diff_dB$mean.diff)])
 
 ggplot(mean_diff_dB, aes(x = sound.files, y = mean.diff, group = sound.files, color = sound.files)) +
-    geom_errorbar(aes(ymin=mean.diff - sd.diff, ymax = mean.diff + sd.diff, color = sound.files),width=.2, position=pd) +
+    geom_errorbar(aes(ymin = mean.diff - sd.diff, ymax = mean.diff + sd.diff, color = sound.files),width=.2, position=pd) +
     geom_line(position=pd) +
     scale_color_viridis_d(end = 0.8) +
     geom_point(position=pd, size=1) +
