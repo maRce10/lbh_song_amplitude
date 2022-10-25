@@ -52,6 +52,8 @@ Writing paper
 - remove null models? (run only the actual model) except for multiple actual models (e.g. body size, lifting power)
 - add table with model results
 - add stats (and graph) to show individuals differ in SPL
+- rerun stats for perch interaction and test contrasts (make sure predictors are mean-centered but no scaled)
+- for models with random slopes get average increase (for those that increase) and decrease (for those that decreased) in SPL
 
 ## Status
 
