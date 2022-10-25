@@ -47,18 +47,18 @@ Writing paper
 
 ## To-do list
 
+- rerun stats with brms
+- calibrate with new sound meter
+- remove null models? (run only the actual model) except for multiple actual models (e.g. body size, lifting power)
+- add table with model results
+- add stats (and graph) to show individuals differ in SPL
+
 ## Status
 
-Project is: *in progress*
+Project is: (*writting manuscript*)[https://docs.google.com/document/d/13v3NdJ1ZCmMTUc6kX1Jh3byvcNMXObq-/edit]
 
 ## Contact
 
 Created by [Marcelo Araya-Salas](https://marceloarayasalas.weebly.com/)
 
-<!-- #### discusion -->
 
-<!-- # title: Cultural evolution hummingbirds  -->
-
-<!-- do alignments matter? compare convergence across aligent methods (prank, all equal, optimal) -->
-
-<!-- hacer machote para el aticulo -->
