@@ -48,13 +48,13 @@ Writing paper
 ## To-do list
 
 - rerun stats with brms
-- calibrate with new sound meter
+- ~calibrate with new sound meter~ subtract 17,82631579 to each SPL to calibrate based on new sound meter
 - remove null models? (run only the actual model) except for multiple actual models (e.g. body size, lifting power)
 - add table with model results
 - add stats (and graph) to show individuals differ in SPL
 - rerun stats for perch interaction and test contrasts (make sure predictors are mean-centered but no scaled)
 - for models with random slopes get average increase (for those that increase) and decrease (for those that decreased) in SPL
-- subtract  17,82631579 to each SPL to calibrate based on new sound meter
+- 
 
 ## Status
 
