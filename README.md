@@ -58,7 +58,7 @@ Writing paper
 
 ## Status
 
-Project is: (*writting manuscript*)[https://docs.google.com/document/d/13v3NdJ1ZCmMTUc6kX1Jh3byvcNMXObq-/edit]
+Project is: [*writting manuscript*](https://docs.google.com/document/d/13v3NdJ1ZCmMTUc6kX1Jh3byvcNMXObq-/edit)
 
 ## Contact
 
